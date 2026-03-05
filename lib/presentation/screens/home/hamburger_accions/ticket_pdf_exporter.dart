@@ -34,12 +34,61 @@ class TicketPdfExporter {
   }
 
   Future<String> guardarCompraEnSistema(Compra compra) async {
-    final pdfBuild = await _buildCompraPdf(compra);    
-    await Printing.layoutPdf(
-      name: pdfBuild.fileName,
-      onLayout: (_) async => pdfBuild.bytes,
-    );
-    return pdfBuild.fileName;
+    final pdfBuild = await _buildCompraPdf(compra);
+    final saveDir = await _resolveSaveDirectory();
+    if (!await saveDir.exists()) {
+      await saveDir.create(recursive: true);
+    }
+
+    final filePath = p.join(saveDir.path, pdfBuild.fileName);
+    final file = File(filePath);
+    await file.writeAsBytes(pdfBuild.bytes, flush: true);
+    return filePath;
+  }
+
+  Future<Directory> _resolveSaveDirectory() async {
+    if (Platform.isAndroid) {
+      const publicCandidates = [
+        '/storage/emulated/0/Download/TicketsSupermercado',
+        '/sdcard/Download/TicketsSupermercado',
+      ];
+
+      for (final candidatePath in publicCandidates) {
+        final candidate = Directory(candidatePath);
+        if (await _canWriteDirectory(candidate)) {
+          return candidate;
+        }
+      }
+
+      final appExternalDownloads = await getExternalStorageDirectories(type: StorageDirectory.downloads);
+      if (appExternalDownloads != null && appExternalDownloads.isNotEmpty) {
+        final fallbackExternal = Directory(
+          p.join(appExternalDownloads.first.path, 'TicketsSupermercado'),
+        );
+        if (await _canWriteDirectory(fallbackExternal)) {
+          return fallbackExternal;
+        }
+      }
+    }
+
+    final appDocs = await getApplicationDocumentsDirectory();
+    return Directory(p.join(appDocs.path, 'tickets_pdf'));
+  }
+
+  Future<bool> _canWriteDirectory(Directory dir) async {
+    try {
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+      final probeFile = File(p.join(dir.path, '.write_probe'));
+      await probeFile.writeAsString('ok', flush: true);
+      if (await probeFile.exists()) {
+        await probeFile.delete();
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<String> guardarCompraComoImagenEnGaleria(Compra compra) async {
@@ -260,7 +309,7 @@ class TicketPdfExporter {
 
   pw.Widget _lineaSeparadora(pw.Font font) {
     return pw.Text(
-      '----------------------------------------',
+      '--------------------------------------',
       style: pw.TextStyle(font: font, fontSize: 9),
     );
   }

@@ -502,6 +502,7 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
   @override
   Widget build(BuildContext context) {
     String lugarSeleccionado = _lugarController.text.trim();
+    final tecladoVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -667,14 +668,19 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
                     },
                   ),
           ),
-          ResumenCompraFooter(
-            total: _calcularTotal(),
-            puedeFinalizar: _puedeFinalizarCompra(),
-            tieneProductos: _productos.isNotEmpty,
-            lugarDefinido: _tieneComercioValido(),
-            onAgregarProducto: _agregarProducto,
-            onFinalizarCompra: _confirmarFinalizarCompra,
-            onCancelarCompra: _confirmarCancelarCompra,
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            child: tecladoVisible
+                ? const SizedBox.shrink()
+                : ResumenCompraFooter(
+                    total: _calcularTotal(),
+                    puedeFinalizar: _puedeFinalizarCompra(),
+                    tieneProductos: _productos.isNotEmpty,
+                    lugarDefinido: _tieneComercioValido(),
+                    onAgregarProducto: _agregarProducto,
+                    onFinalizarCompra: _confirmarFinalizarCompra,
+                    onCancelarCompra: _confirmarCancelarCompra,
+                  ),
           ),
         ],
       ),

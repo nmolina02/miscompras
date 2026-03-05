@@ -1,5 +1,5 @@
 import 'package:mi_compra_mayorista/data/local/compra_repository.dart';
-import 'package:mi_compra_mayorista/data/local/ticket_pdf_exporter.dart';
+import 'package:mi_compra_mayorista/presentation/screens/home/hamburger_accions/ticket_pdf_exporter.dart';
 import 'package:flutter/material.dart';
 
 class TicketExporterProvider {
@@ -60,7 +60,7 @@ class TicketExporterProvider {
           return;
         }
 
-        final fileName = accion == _accionGuardar
+        final resultado = accion == _accionGuardar
           ? await TicketPdfExporter.instance.guardarCompraEnSistema(compraSeleccionada)
           : accion == _accionGaleria
             ? await TicketPdfExporter.instance.guardarCompraComoImagenEnGaleria(compraSeleccionada)
@@ -74,10 +74,10 @@ class TicketExporterProvider {
           SnackBar(
             content: Text(
               accion == _accionGuardar
-                  ? 'Ticket listo para guardar: $fileName'
+                  ? 'Ticket guardado en: $resultado'
                   : accion == _accionGaleria
-                      ? 'Ticket guardado en galeria: $fileName'
-                  : 'Ticket listo para compartir: $fileName',
+                    ? 'Ticket guardado en galeria: $resultado'
+                  : 'Ticket listo para compartir: $resultado',
             ),
           ),
         );
@@ -103,17 +103,17 @@ class TicketExporterProvider {
             children: [
               ListTile(
                 leading: const Icon(Icons.share_rounded),
-                title: const Text('Compartir por una aplicación'),
+                title: const Text('Compartir'),
                 onTap: () => Navigator.of(modalContext).pop(_accionCompartir),
               ),
               ListTile(
-                leading: const Icon(Icons.print_rounded),
-                title: const Text('Imprimir'),
+                leading: const Icon(Icons.download_rounded),
+                title: const Text('Guardar en descargas'),
                 onTap: () => Navigator.of(modalContext).pop(_accionGuardar),
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library_rounded),
-                title: const Text('Guardar como imagen en galeria'),
+                title: const Text('Guardar como imagen'),
                 onTap: () => Navigator.of(modalContext).pop(_accionGaleria),
               ),
             ],

@@ -4,10 +4,10 @@ import 'package:mi_compra_mayorista/domain/entities/producto.dart';
 import 'package:mi_compra_mayorista/domain/entities/rubro.dart';
 import 'package:flutter/material.dart';
 
-class DatabaseEditScreen {
-  DatabaseEditScreen();
+class InfoProductEditScreen {
+  InfoProductEditScreen();
 
-  Positioned databaseEditButton(BuildContext context) {
+  Positioned productEditButton(BuildContext context) {
     return
     // Botón flotante en esquina inferior derecha
     Positioned(
@@ -15,7 +15,7 @@ class DatabaseEditScreen {
       right: 16,
       child: FloatingActionButton(
         onPressed: () {
-          _runDatabaseEdit(context);
+          _runProductEdit(context);
         },
         backgroundColor: Theme.of(context).colorScheme.primary,
         child: const Icon(
@@ -26,7 +26,7 @@ class DatabaseEditScreen {
     );
   }
 
-  void _runDatabaseEdit(BuildContext context) {
+  void _runProductEdit(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => const _DatabaseEditProductsScreen(),
@@ -88,6 +88,7 @@ class _DatabaseEditProductsScreenState extends State<_DatabaseEditProductsScreen
 
   bool _cargando = true;
   final Set<String> _guardandoCodigos = <String>{};
+  final Set<String> _eliminandoCodigos = <String>{};
   String? _productoConSugerenciasAbiertas;
   int? _productoExpandidoIndex;
 
@@ -263,6 +264,83 @@ class _DatabaseEditProductsScreenState extends State<_DatabaseEditProductsScreen
     }
   }
 
+  Future<void> _eliminarProducto(_EditableProductoRow row, int index) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Eliminar producto'),
+          content: Text(
+            'Esta accion eliminara el producto ${row.nombreController.text.trim().isEmpty ? row.codigoDeBarras : row.nombreController.text.trim()} de forma permanente. ¿Desea continuar?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Si, eliminar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmar != true) {
+      return;
+    }
+
+    setState(() {
+      _eliminandoCodigos.add(row.codigoDeBarras);
+    });
+
+    try {
+      final eliminado = await _productoRepository.delete(row.codigoDeBarras);
+      if (!mounted) {
+        return;
+      }
+
+      if (!eliminado) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo eliminar el producto.')),
+        );
+        return;
+      }
+
+      setState(() {
+        row.dispose();
+        _productos.removeAt(index);
+
+        if (_productoExpandidoIndex == index) {
+          _productoExpandidoIndex = null;
+        } else if (_productoExpandidoIndex != null && _productoExpandidoIndex! > index) {
+          _productoExpandidoIndex = _productoExpandidoIndex! - 1;
+        }
+
+        _productoConSugerenciasAbiertas = null;
+        _rubrosFiltrados = [];
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Producto eliminado correctamente.')),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo eliminar el producto.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _eliminandoCodigos.remove(row.codigoDeBarras);
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -287,6 +365,7 @@ class _DatabaseEditProductsScreenState extends State<_DatabaseEditProductsScreen
                       final row = _productos[index];
                       final estaExpandido = _productoExpandidoIndex == index;
                       final estaGuardando = _guardandoCodigos.contains(row.codigoDeBarras);
+                        final estaEliminando = _eliminandoCodigos.contains(row.codigoDeBarras);
                       final mostrarSugerencias = _productoConSugerenciasAbiertas == row.codigoDeBarras &&
                           row.rubroFocusNode.hasFocus &&
                           _rubrosFiltrados.isNotEmpty;
@@ -404,20 +483,39 @@ class _DatabaseEditProductsScreenState extends State<_DatabaseEditProductsScreen
                                             },
                                           ),
                                         ),
-                                      const SizedBox(height: 12),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: FilledButton.icon(
-                                          onPressed: estaGuardando ? null : () => _guardarProducto(row),
-                                          icon: estaGuardando
-                                              ? const SizedBox(
-                                                  width: 16,
-                                                  height: 16,
-                                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                                )
-                                              : const Icon(Icons.save),
-                                          label: Text(estaGuardando ? 'Guardando...' : 'Guardar cambios'),
-                                        ),
+                                      Row(
+                                        children: [
+                                          OutlinedButton.icon(
+                                            onPressed: (estaGuardando || estaEliminando)
+                                                ? null
+                                                : () => _eliminarProducto(row, index),
+                                            icon: estaEliminando
+                                                ? const SizedBox(
+                                                    width: 16,
+                                                    height: 16,
+                                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                                  )
+                                                : const Icon(Icons.delete_outline),
+                                            label: Text(estaEliminando ? 'Eliminando...' : 'Eliminar producto'),
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor: Theme.of(context).colorScheme.error,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          FilledButton.icon(
+                                            onPressed: (estaGuardando || estaEliminando)
+                                                ? null
+                                                : () => _guardarProducto(row),
+                                            icon: estaGuardando
+                                                ? const SizedBox(
+                                                    width: 16,
+                                                    height: 16,
+                                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                                  )
+                                                : const Icon(Icons.save),
+                                            label: Text(estaGuardando ? 'Guardando...' : 'Guardar cambios'),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
