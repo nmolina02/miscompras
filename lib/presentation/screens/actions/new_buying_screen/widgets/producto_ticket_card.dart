@@ -1,0 +1,385 @@
+import 'package:mi_compra_mayorista/presentation/screens/actions/new_buying_screen/widgets/item_ticket_usuario.dart';
+import 'package:flutter/material.dart';
+
+class ProductoTicketCard extends StatelessWidget {
+  final ItemTicketUsuario producto;
+  final int index;
+  final bool estaExpandido;
+  final List<ItemTicketUsuario> productosFiltrados;
+  final List<ItemTicketUsuario> historialProductos;
+  final List<String> rubrosFiltrados;
+  final List<String> historialRubros;
+  final VoidCallback onExpand;
+  final VoidCallback onCollapse;
+  final VoidCallback onDelete;
+  final Future<void> Function() onScan;
+  final ValueChanged<String> onFiltrarProductos;
+  final ValueChanged<String> onFiltrarRubros;
+  final VoidCallback onMostrarHistorial;
+  final VoidCallback onMostrarHistorialRubros;
+  final Future<void> Function(ItemTicketUsuario) onSelectNombre;
+  final ValueChanged<String> onSelectRubro;
+  final VoidCallback onLimpiarProductosFiltrados;
+  final VoidCallback onLimpiarRubrosFiltrados;
+  final ValueChanged<String> onCodigoChanged;
+  final ValueChanged<String> onPrecioChanged;
+  final VoidCallback onCantidadMinus;
+  final VoidCallback onCantidadPlus;
+  final ValueChanged<String> onPrecioDescuentoChanged;
+  final ValueChanged<String> onCantidadDescuentoChanged;
+
+  const ProductoTicketCard({
+    super.key,
+    required this.producto,
+    required this.index,
+    required this.estaExpandido,
+    required this.productosFiltrados,
+    required this.historialProductos,
+    required this.rubrosFiltrados,
+    required this.historialRubros,
+    required this.onExpand,
+    required this.onCollapse,
+    required this.onDelete,
+    required this.onScan,
+    required this.onFiltrarProductos,
+    required this.onFiltrarRubros,
+    required this.onMostrarHistorial,
+    required this.onMostrarHistorialRubros,
+    required this.onSelectNombre,
+    required this.onSelectRubro,
+    required this.onLimpiarProductosFiltrados,
+    required this.onLimpiarRubrosFiltrados,
+    required this.onCodigoChanged,
+    required this.onPrecioChanged,
+    required this.onCantidadMinus,
+    required this.onCantidadPlus,
+    required this.onPrecioDescuentoChanged,
+    required this.onCantidadDescuentoChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final String nombreResumen = producto.nombreController.text.trim().isEmpty
+        ? 'Producto ${index + 1}'
+        : producto.nombreController.text.trim();
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, animation) {
+          return SizeTransition(
+            sizeFactor: animation,
+            axisAlignment: -1,
+            child: FadeTransition(
+              opacity: animation,
+              child: child,
+            ),
+          );
+        },
+        child: estaExpandido
+            ? Padding(
+                key: ValueKey('producto-expandido-$index'),
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            nombreResumen,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        Text(
+                          '\$${producto.total.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.expand_less),
+                          tooltip: 'Plegar producto',
+                          onPressed: onCollapse,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              TextField(
+                                controller: producto.nombreController,
+                                focusNode: producto.nombreFocusNode,
+                                decoration: const InputDecoration(
+                                  labelText: 'Producto',
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                                onChanged: onFiltrarProductos,
+                                onTap: () {
+                                  onExpand();
+                                  if (producto.nombreController.text.isEmpty) {
+                                    onMostrarHistorial();
+                                  }
+                                },
+                              ),
+                              if (producto.nombreFocusNode.hasFocus && productosFiltrados.isNotEmpty)
+                                Container(
+                                  margin: const EdgeInsets.only(top: 4),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Theme.of(context).dividerColor),
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: ListView.builder(
+                                    shrinkWrap: true,
+                                    itemCount: productosFiltrados.length,
+                                    itemBuilder: (context, filteredIndex) {
+                                      final productoSeleccionado = productosFiltrados[filteredIndex];
+                                      final nombre = productoSeleccionado.nombreController.text;
+                                      return ListTile(
+                                        dense: true,
+                                        title: Text(nombre),
+                                        onTap: () async {
+                                          await onSelectNombre(productoSeleccionado);
+                                          onLimpiarProductosFiltrados();
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.qr_code_2),
+                          tooltip: 'Escanear código de barras',
+                          onPressed: onScan,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          onPressed: onDelete,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: producto.codigoBarrasController,
+                      decoration: const InputDecoration(
+                        labelText: 'Código de barras',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      keyboardType: TextInputType.number,
+                      onChanged: onCodigoChanged,
+                    ),
+                    const SizedBox(height: 12),
+                    Column(
+                      children: [
+                        TextField(
+                          controller: producto.rubroController,
+                          focusNode: producto.rubroFocusNode,
+                          decoration: const InputDecoration(
+                            labelText: 'Rubro',
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          keyboardType: TextInputType.text,
+                          onChanged: onFiltrarRubros,
+                          onTap: () {
+                            onExpand();
+                            if (producto.rubroController.text.isEmpty) {
+                              onMostrarHistorialRubros();
+                            }
+                          },
+                        ),
+                        if (producto.rubroFocusNode.hasFocus && rubrosFiltrados.isNotEmpty)
+                          Container(
+                            margin: const EdgeInsets.only(top: 4),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Theme.of(context).dividerColor),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: rubrosFiltrados.length,
+                              itemBuilder: (context, filteredIndex) {
+                                final rubro = rubrosFiltrados[filteredIndex];
+                                return ListTile(
+                                  dense: true,
+                                  title: Text(rubro),
+                                  onTap: () {
+                                    onSelectRubro(rubro);
+                                    onLimpiarRubrosFiltrados();
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
+                            controller: producto.precioController,
+                            decoration: const InputDecoration(
+                              labelText: 'Precio',
+                              prefixText: '\$ ',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            keyboardType: TextInputType.number,
+                            onChanged: onPrecioChanged,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Theme.of(context).dividerColor),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.remove, size: 18),
+                                onPressed: onCantidadMinus,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  '${producto.cantidad}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.add, size: 18),
+                                onPressed: onCantidadPlus,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 2,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).scaffoldBackgroundColor,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Theme.of(context).dividerColor),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'Total',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Theme.of(context).dividerColor,
+                                  ),
+                                ),
+                                Text(
+                                  '\$${producto.total.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: producto.precioDescuentoController,
+                            decoration: const InputDecoration(
+                              labelText: 'Precio con descuento',
+                              prefixText: '\$ ',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            keyboardType: TextInputType.number,
+                            onChanged: onPrecioDescuentoChanged,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: producto.cantidadDescuentoController,
+                            decoration: const InputDecoration(
+                              labelText: 'A partir de cantidad',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            keyboardType: TextInputType.number,
+                            onChanged: onCantidadDescuentoChanged,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              )
+            : InkWell(
+                key: ValueKey('producto-plegado-$index'),
+                onTap: onExpand,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          nombreResumen,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '\$${producto.total.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.expand_more),
+                    ],
+                  ),
+                ),
+              ),
+      ),
+    );
+  }
+}
