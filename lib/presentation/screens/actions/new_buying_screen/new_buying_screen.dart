@@ -136,6 +136,171 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
     _guardarBorrador();
   }
 
+  Future<void> _autocompletarCodigoDeBarrasParaProductoSuelto(ItemTicketUsuario producto) async {
+    // Los códigos de barras genéricos para productos sueltos comienzan con '999999999999999999999' y luego tienen un número incremental.
+    // La finalidad es evitar colisiones entre ellos y se identifican fácilmente. No interfieren con productos registrados.
+    // Al finalizar la compra, se autocompleta su código para que queden registrados en el sistema.
+    // Son 21 '9', y luego se van autoincrementando.
+    try {
+      const prefijoCodigoSuelto = '999999999999999999999';
+      final lista = await _productoRepository.list();
+      final productosSueltos = lista
+          .where((p) => p.codigoDeBarras.startsWith(prefijoCodigoSuelto))
+          .toList();
+
+      int ultimoCorrelativo = 0;
+      for (final p in productosSueltos) {
+        if (p.codigoDeBarras.length <= prefijoCodigoSuelto.length) {
+          continue;
+        }
+        final sufijo = p.codigoDeBarras.substring(prefijoCodigoSuelto.length);
+        final correlativo = int.tryParse(sufijo) ?? 0;
+        if (correlativo > ultimoCorrelativo) {
+          ultimoCorrelativo = correlativo;
+        }
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      final proximoCodigo = (ultimoCorrelativo + 1).toString();
+      setState(() {
+        producto.codigoBarrasController.text = '999999999999999999999$proximoCodigo';
+      });
+      _guardarBorrador();
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo generar el codigo del producto suelto.')),
+      );
+    }
+  }
+
+  Future<void> _calcularPrecioParaProductoSuelto(ItemTicketUsuario producto) async {
+    // Si el producto tiene un código de barras que indica que es suelto, mostrar un diálogo para ingresar la cantidad.
+    if (!producto.codigoBarrasController.text.startsWith('999999999999999999999')) {
+      return;
+    }
+
+    String cantidadInput = '';
+    String precioInput = '';
+
+    try {
+      final data = await showDialog<Map<String, String>>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text('Calculo de precio por kilo/litro'),
+            scrollable: true,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(
+                  initialValue: cantidadInput,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                  decoration: const InputDecoration(
+                    labelText: 'Cantidad (gramos/mililitros)',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onChanged: (value) => cantidadInput = value,
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  initialValue: precioInput,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Precio',
+                    prefixText: '\$ ',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onChanged: (value) => precioInput = value,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  final cantidad = int.tryParse(cantidadInput.trim());
+                  final precio = double.tryParse(precioInput.trim().replaceAll(',', '.'));
+
+                  if (cantidad == null || cantidad <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Cantidad inválida.')),
+                    );
+                    return;
+                  }
+
+                  if (precio == null || precio <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Precio inválido.')),
+                    );
+                    return;
+                  }
+
+                  Navigator.of(dialogContext).pop({
+                    'cantidad': cantidadInput.trim(),
+                    'precio': precioInput.trim(),
+                  });
+                },
+                child: const Text('Aceptar'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (data == null || !mounted) {
+        return;
+      }
+
+      final cantidad = int.tryParse(data['cantidad'] ?? '');
+      final precio = double.tryParse((data['precio'] ?? '').replaceAll(',', '.'));
+
+      if (cantidad == null || cantidad <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cantidad inválida.')),
+        );
+        return;
+      }
+
+      if (precio == null || precio <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Precio inválido.')),
+        );
+        return;
+      }
+
+      if (!_productos.contains(producto)) {
+        return;
+      }
+
+      final precioCalculado = (precio * 1000) / cantidad;
+      setState(() {
+        producto.cantidad = 1;
+        producto.precioUnitario = precioCalculado;
+        producto.precioController.text = precioCalculado.toStringAsFixed(2);
+      });
+      _guardarBorrador();
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo calcular el precio del producto suelto.')),
+      );
+    }
+  }
+
   void _eliminarProducto(int index) {
     setState(() {
       _productos.removeAt(index);
@@ -269,8 +434,12 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
     return _productos.every((item) => item.codigoBarrasController.text.trim().isNotEmpty);
   }
 
+  bool _tienenNombre() {
+    return _productos.every((item) => item.nombreController.text.trim().isNotEmpty);
+  }
+
   bool _puedeFinalizarCompra() {
-    return _productos.isNotEmpty && _tieneComercioValido() && _tienenCodigoDeBarras() && _calcularTotal() > 0;
+    return _productos.isNotEmpty && _tieneComercioValido() && _tienenCodigoDeBarras() && _tienenNombre() && _calcularTotal() > 0;
   }
 
   Future<void> _confirmarFinalizarCompra() async {
@@ -586,6 +755,12 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
                             _productosFiltrados = [];
                             _rubrosFiltrados = [];
                           });
+                        },
+                        onScaleProduct: () async {
+                          await _autocompletarCodigoDeBarrasParaProductoSuelto(producto);
+                        },
+                        onCalculateKiloPrice: () async {
+                          await _calcularPrecioParaProductoSuelto(producto);
                         },
                         onDelete: () {
                           producto.dispose();

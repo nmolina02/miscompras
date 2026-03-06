@@ -11,6 +11,8 @@ class ProductoTicketCard extends StatelessWidget {
   final List<String> historialRubros;
   final VoidCallback onExpand;
   final VoidCallback onCollapse;
+  final VoidCallback onScaleProduct;
+  final VoidCallback onCalculateKiloPrice;
   final VoidCallback onDelete;
   final Future<void> Function() onScan;
   final ValueChanged<String> onFiltrarProductos;
@@ -39,6 +41,8 @@ class ProductoTicketCard extends StatelessWidget {
     required this.historialRubros,
     required this.onExpand,
     required this.onCollapse,
+    required this.onScaleProduct,
+    required this.onCalculateKiloPrice,
     required this.onDelete,
     required this.onScan,
     required this.onFiltrarProductos,
@@ -160,72 +164,96 @@ class ProductoTicketCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         IconButton(
-                          icon: const Icon(Icons.qr_code_2),
-                          tooltip: 'Escanear código de barras',
-                          onPressed: onScan,
+                          icon: const Icon(Icons.shopping_cart_rounded),
+                          tooltip: 'Marcar producto como suelto',
+                          onPressed: onScaleProduct,
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
                           onPressed: onDelete,
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: producto.codigoBarrasController,
-                      decoration: const InputDecoration(
-                        labelText: 'Código de barras',
-                        border: OutlineInputBorder(),
-                        isDense: true,
-                      ),
-                      keyboardType: TextInputType.number,
-                      onChanged: onCodigoChanged,
-                    ),
-                    const SizedBox(height: 12),
-                    Column(
+                    Row(
                       children: [
-                        TextField(
-                          controller: producto.rubroController,
-                          focusNode: producto.rubroFocusNode,
-                          decoration: const InputDecoration(
-                            labelText: 'Rubro',
-                            border: OutlineInputBorder(),
-                            isDense: true,
+                        Expanded(
+                          child: TextField(
+                            controller: producto.codigoBarrasController,
+                            decoration: const InputDecoration(
+                              labelText: 'Código de barras',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            keyboardType: TextInputType.number,
+                            onChanged: onCodigoChanged,
                           ),
-                          keyboardType: TextInputType.text,
-                          onChanged: onFiltrarRubros,
-                          onTap: () {
-                            onExpand();
-                            if (producto.rubroController.text.isEmpty) {
-                              onMostrarHistorialRubros();
-                            }
-                          },
                         ),
-                        if (producto.rubroFocusNode.hasFocus && rubrosFiltrados.isNotEmpty)
-                          Container(
-                            margin: const EdgeInsets.only(top: 4),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Theme.of(context).dividerColor),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: rubrosFiltrados.length,
-                              itemBuilder: (context, filteredIndex) {
-                                final rubro = rubrosFiltrados[filteredIndex];
-                                return ListTile(
-                                  dense: true,
-                                  title: Text(rubro),
-                                  onTap: () {
-                                    onSelectRubro(rubro);
-                                    onLimpiarRubrosFiltrados();
-                                  },
-                                );
-                              },
-                            ),
-                          ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.qr_code_2_rounded),
+                          tooltip: 'Escanear código de barras',
+                          onPressed: onScan,
+                        ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              TextField(
+                                controller: producto.rubroController,
+                                focusNode: producto.rubroFocusNode,
+                                decoration: const InputDecoration(
+                                  labelText: 'Rubro',
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                                keyboardType: TextInputType.text,
+                                onChanged: onFiltrarRubros,
+                                onTap: () {
+                                  onExpand();
+                                  if (producto.rubroController.text.isEmpty) {
+                                    onMostrarHistorialRubros();
+                                  }
+                                },
+                              ),
+                              if (producto.rubroFocusNode.hasFocus && rubrosFiltrados.isNotEmpty)
+                                Container(
+                                  margin: const EdgeInsets.only(top: 4),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Theme.of(context).dividerColor),
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: ListView.builder(
+                                    shrinkWrap: true,
+                                    itemCount: rubrosFiltrados.length,
+                                    itemBuilder: (context, filteredIndex) {
+                                      final rubro = rubrosFiltrados[filteredIndex];
+                                      return ListTile(
+                                        dense: true,
+                                        title: Text(rubro),
+                                        onTap: () {
+                                          onSelectRubro(rubro);
+                                          onLimpiarRubrosFiltrados();
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.scale_rounded),
+                          tooltip: 'Calcular precio por kilo/litro',
+                          onPressed: onCalculateKiloPrice,
+                        ),
+                      ],
+                    ), 
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -336,7 +364,7 @@ class ProductoTicketCard extends StatelessWidget {
                           child: TextField(
                             controller: producto.cantidadDescuentoController,
                             decoration: const InputDecoration(
-                              labelText: 'A partir de cantidad',
+                              labelText: 'Cantidad mínima necesaria',
                               border: OutlineInputBorder(),
                               isDense: true,
                             ),
