@@ -2,7 +2,7 @@ import 'package:mi_compra_mayorista/data/local/compra_repository.dart';
 import 'package:flutter/material.dart';
 
 class _CompraPendiente {
-  final int ticketId;
+  final String ticketId;
   final String fecha;
   final String comercio;
   final double importeTotal;
@@ -84,7 +84,7 @@ class _ConfirmacionCompraScreenState extends State<ConfirmacionCompraScreen> {
   }
 
   Future<bool> _confirmarTicketEnBackend({
-    required int ticketId,
+    required String ticketId,
     required double? montoRealPagado,
   }) async {
     try {

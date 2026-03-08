@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mi_compra_mayorista/presentation/screens/actions/actions_screen.dart';
-import 'package:mi_compra_mayorista/presentation/screens/database_edit/product_edit.dart';
+import 'package:mi_compra_mayorista/presentation/screens/chatbot/chatbot.dart';
 import 'package:mi_compra_mayorista/presentation/screens/home/home_options_list_screen.dart';
 import 'package:mi_compra_mayorista/presentation/screens/home/hamburger_menu_screen.dart';
 import 'package:mi_compra_mayorista/presentation/providers/option_provider.dart';
@@ -27,7 +27,7 @@ class _HomeViewState extends State<_HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    final productEdit = InfoProductEditScreen();
+    final chatbot = Chatbot();
 
     return SafeArea(
       child: Stack(
@@ -70,7 +70,7 @@ class _HomeViewState extends State<_HomeView> {
             ],
           ),
           // Botón flotante del database edit
-          productEdit.productEditButton(context),
+          chatbot.productEditButton(context),
         ],
       ),
     );

@@ -137,36 +137,83 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
   }
 
   Future<void> _autocompletarCodigoDeBarrasParaProductoSuelto(ItemTicketUsuario producto) async {
-    // Los códigos de barras genéricos para productos sueltos comienzan con '999999999999999999999' y luego tienen un número incremental.
-    // La finalidad es evitar colisiones entre ellos y se identifican fácilmente. No interfieren con productos registrados.
-    // Al finalizar la compra, se autocompleta su código para que queden registrados en el sistema.
-    // Son 21 '9', y luego se van autoincrementando.
+    // Los códigos de barras genéricos para productos sueltos se completan en base a un diccionario definido por el sistema.
+    // Se arma el código a partir del nombre del producto y se rellena con ceros a la izquierda hasta 21 dígitos.
+
+    final abecedario = {
+      'A': '0',
+      'B': '1',
+      'C': '2',
+      'D': '3',
+      'E': '4',
+      'F': '5',
+      'G': '6',
+      'H': '7',
+      'I': '8',
+      'J': '9',
+      'K': '10',
+      'L': '11',
+      'M': '12',
+      'N': '13',
+      'Ñ': '14',
+      'O': '15',
+      'P': '16',
+      'Q': '17',
+      'R': '18',
+      'S': '19',
+      'T': '20',
+      'U': '21',
+      'V': '22',
+      'W': '23',
+      'X': '24',
+      'Y': '25',
+      'Z': '26',
+    };
+
     try {
-      const prefijoCodigoSuelto = '999999999999999999999';
-      final lista = await _productoRepository.list();
-      final productosSueltos = lista
-          .where((p) => p.codigoDeBarras.startsWith(prefijoCodigoSuelto))
-          .toList();
-
-      int ultimoCorrelativo = 0;
-      for (final p in productosSueltos) {
-        if (p.codigoDeBarras.length <= prefijoCodigoSuelto.length) {
-          continue;
+      final nombreProducto = producto.nombreController.text.trim();
+      if (nombreProducto.isEmpty) {
+        if (!mounted) {
+          return;
         }
-        final sufijo = p.codigoDeBarras.substring(prefijoCodigoSuelto.length);
-        final correlativo = int.tryParse(sufijo) ?? 0;
-        if (correlativo > ultimoCorrelativo) {
-          ultimoCorrelativo = correlativo;
-        }
-      }
-
-      if (!mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Complete el nombre del producto antes de autogenerar el código de barras.')),
+        );
         return;
       }
 
-      final proximoCodigo = (ultimoCorrelativo + 1).toString();
+      final nombreNormalizado = nombreProducto
+          .toUpperCase()
+          .replaceAll('Á', 'A')
+          .replaceAll('É', 'E')
+          .replaceAll('Í', 'I')
+          .replaceAll('Ó', 'O')
+          .replaceAll('Ú', 'U')
+          .replaceAll('Ü', 'U');
+
+      final buffer = StringBuffer();
+      for (final caracter in nombreNormalizado.split('')) {
+        final codigo = abecedario[caracter];
+        if (codigo != null) {
+          buffer.write(codigo);
+        }
+      }
+
+      final codigoBase = buffer.toString();
+      if (codigoBase.isEmpty) {
+        if (!mounted) {
+          return;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('El nombre ingresado no contiene letras válidas para generar el código.')),
+        );
+        return;
+      }
+
+      final codigoFinal = codigoBase.length >= 21 ? codigoBase : codigoBase.padLeft(21, '0');
+
       setState(() {
-        producto.codigoBarrasController.text = '999999999999999999999$proximoCodigo';
+        producto.codigoBarrasController.text = codigoFinal;
       });
       _guardarBorrador();
     } catch (_) {
@@ -180,8 +227,16 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
   }
 
   Future<void> _calcularPrecioParaProductoSuelto(ItemTicketUsuario producto) async {
-    // Si el producto tiene un código de barras que indica que es suelto, mostrar un diálogo para ingresar la cantidad.
-    if (!producto.codigoBarrasController.text.startsWith('999999999999999999999')) {
+    // Para productos sueltos, el código se genera desde el nombre y queda con 21+ dígitos numéricos.
+    final codigo = producto.codigoBarrasController.text.trim();
+    final esProductoSuelto = codigo.length >= 21 && codigo.codeUnits.every((unit) => unit >= 48 && unit <= 57);
+    if (!esProductoSuelto) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Primero genere el código del producto suelto para calcular precio por kilo/litro.')),
+      );
       return;
     }
 

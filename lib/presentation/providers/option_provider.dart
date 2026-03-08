@@ -8,25 +8,27 @@ class OptionProvider extends ChangeNotifier {
     'Historial de Compras',
     'Eliminar Compra',
     'Reportes / Estadísticas',
+    'Editar Productos',
   ];
 
   // Iconos para cada opción
   final List<IconData> _icons = const [
-    Icons.add_shopping_cart,
-    Icons.pending_actions,
-    Icons.history,
-    Icons.delete,
+    Icons.add_shopping_cart_rounded,
+    Icons.pending_actions_rounded,
+    Icons.history_rounded,
+    Icons.delete_rounded,
     Icons.bar_chart,
+    Icons.edit_document,
   ];
 
   // Colores para cada opción (puedes personalizarlos según necesites)
   final List<Color> circleColors = const [
-    Colors.green,
-    Colors.blue,
-    Colors.orange,
-    Colors.red,
-    Colors.teal,
-    Colors.purple,
+    Color(0xFF779ECB), // Azul claro
+    Color(0xFF81C784), // Verde claro
+    Color(0xFFFFB74D), // Naranja claro
+    Color(0xFFEF9A9A), // Rojo claro
+    Color(0xFF4DB6AC), // Teal claro
+    Color(0xFF9575CD), // Púrpura claro
   ];
 
   List<String> get optionList => _options;

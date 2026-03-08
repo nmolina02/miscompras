@@ -126,7 +126,7 @@ class TicketPdfExporter {
   }
 
   Future<TicketPdfBuild> _buildCompraPdf(Compra compra) async {
-    final items = await _itemTicketRepository.listByTicketId(compra.ticketId.toString());
+    final items = await _itemTicketRepository.listByTicketId(compra.ticketId);
     final pdf = pw.Document();
     final ticketFont = pw.Font.courier();
     const ticketWidth = 80 * PdfPageFormat.mm;
@@ -273,12 +273,12 @@ class TicketPdfExporter {
     );
   }
 
-  String _buildFileName(int ticketId, String fechaRaw) {
+  String _buildFileName(String ticketId, String fechaRaw) {
     final safeDate = _safeFileDate(fechaRaw);
     return 'ticket_${ticketId}_$safeDate.pdf';
   }
 
-  String _buildImageFileName(int ticketId, String fechaRaw) {
+  String _buildImageFileName(String ticketId, String fechaRaw) {
     final safeDate = _safeFileDate(fechaRaw);
     return 'ticket_${ticketId}_$safeDate.png';
   }

@@ -4,37 +4,6 @@ import 'package:mi_compra_mayorista/domain/entities/producto.dart';
 import 'package:mi_compra_mayorista/domain/entities/rubro.dart';
 import 'package:flutter/material.dart';
 
-class InfoProductEditScreen {
-  InfoProductEditScreen();
-
-  Positioned productEditButton(BuildContext context) {
-    return
-    // Botón flotante en esquina inferior derecha
-    Positioned(
-      bottom: 16,
-      right: 16,
-      child: FloatingActionButton(
-        onPressed: () {
-          _runProductEdit(context);
-        },
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: const Icon(
-          Icons.edit_document,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  void _runProductEdit(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const _DatabaseEditProductsScreen(),
-      ),
-    );
-  }
-}
-
 class _EditableProductoRow {
   final String codigoDeBarras;
   final TextEditingController nombreController;
@@ -71,14 +40,16 @@ class _EditableProductoRow {
   }
 }
 
-class _DatabaseEditProductsScreen extends StatefulWidget {
-  const _DatabaseEditProductsScreen();
+class DatabaseEditProductsScreen extends StatefulWidget {
+  const DatabaseEditProductsScreen({
+    super.key,
+  });
 
   @override
-  State<_DatabaseEditProductsScreen> createState() => _DatabaseEditProductsScreenState();
+  State<DatabaseEditProductsScreen> createState() => _DatabaseEditProductsScreenState();
 }
 
-class _DatabaseEditProductsScreenState extends State<_DatabaseEditProductsScreen> {
+class _DatabaseEditProductsScreenState extends State<DatabaseEditProductsScreen> {
   final ProductoRepository _productoRepository = ProductoRepository.instance;
   final RubroRepository _rubroRepository = RubroRepository.instance;
 
@@ -345,7 +316,7 @@ class _DatabaseEditProductsScreenState extends State<_DatabaseEditProductsScreen
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edición de Productos'),
+        title: const Text('Editar Productos'),
       ),
       body: _cargando
           ? const Center(child: CircularProgressIndicator())

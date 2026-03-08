@@ -7,7 +7,7 @@ import 'package:mi_compra_mayorista/data/local/ticket_repository.dart';
 import 'package:sqflite/sqflite.dart';
 
 class Compra {
-  final int ticketId;
+  final String ticketId;
   final String fecha;
   final String comercio;
   final double importeTotal;
@@ -27,7 +27,7 @@ class Compra {
 
   factory Compra.fromRow(Map<String, Object?> row) {
     return Compra(
-      ticketId: row['id'] as int,
+      ticketId: (row['id'] as String?) ?? '',
       fecha: (row['fecha'] as String?) ?? '',
       comercio: (row['comercio'] as String?) ?? '',
       importeTotal: ((row['importe_total'] as num?) ?? 0).toDouble(),
@@ -66,16 +66,19 @@ class CompraRepository {
 
     await db.transaction((txn) async {
       final comercioId = await comercioRepository.upsertByNombre(comercioLimpio, executor: txn);
+      final ticketDateTimeId = _buildTicketDateTimeId(fecha);
 
-      final ticketId = await txn.insert(
+      await txn.insert(
         'ticket',
         {
+          'ticket_datetime': ticketDateTimeId,
           'comercio_id': comercioId,
           'fecha': fecha,
           'importe_total': importeTotal,
           'recargo_aplicado': 0,
           'confirmacion_status': 0,
         },
+        conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
       for (var index = 0; index < items.length; index += 1) {
@@ -86,7 +89,7 @@ class CompraRepository {
 
         final nombre = (item['nombre'] as String? ?? '').trim();
         final codigo = (item['codigo_barras'] as String? ?? '').trim();
-        final codigoPersistir = codigo.isEmpty ? 'SIN-CODIGO-$ticketId-$index' : codigo;
+        final codigoPersistir = codigo.isEmpty ? 'SIN-CODIGO-$ticketDateTimeId-$index' : codigo;
         final nombrePersistir = nombre.isEmpty ? 'Producto sin nombre' : nombre;
 
         await txn.insert(
@@ -113,7 +116,7 @@ class CompraRepository {
         final total = (item['total_item'] as num?)?.toDouble() ?? 0;
 
         await txn.insert('item_ticket', {
-          'ticket_id': ticketId,
+          'ticket_id': ticketDateTimeId,
           'producto_id': codigoPersistir,
           'cantidad': cantidad,
           'precio_unitario_aplicado': precioUnitario,
@@ -138,7 +141,7 @@ class CompraRepository {
     return tickets
         .map(
           (ticket) => Compra(
-            ticketId: int.tryParse(ticket.id) ?? 0,
+            ticketId: ticket.id,
             fecha: ticket.fecha.toIso8601String(),
             comercio: ticket.comercio.nombre,
             importeTotal: ticket.importeTotal,
@@ -147,16 +150,20 @@ class CompraRepository {
             recargoAplicado: ticket.recargoAplicado,
           ),
         )
-        .where((compra) => compra.ticketId > 0)
+          .where((compra) => compra.ticketId.trim().isNotEmpty)
         .toList();
   }
 
-  Future<int> eliminarComprasPorTicketIds(List<int> ticketIds) async {
+        Future<int> eliminarComprasPorTicketIds(List<String> ticketIds) async {
     if (ticketIds.isEmpty) {
       return 0;
     }
 
-    final idsUnicos = ticketIds.toSet().where((id) => id > 0).toList();
+    final idsUnicos = ticketIds
+      .map((id) => id.trim())
+      .where((id) => id.isNotEmpty)
+      .toSet()
+      .toList();
     if (idsUnicos.isEmpty) {
       return 0;
     }
@@ -168,7 +175,7 @@ class CompraRepository {
 
       for (final ticketId in idsUnicos) {
         final ok = await ticketTableRepository.delete(
-          ticketId.toString(),
+          ticketId,
           executor: txn,
         );
 
@@ -181,11 +188,23 @@ class CompraRepository {
     });
   }
 
-  Future<bool> confirmarCompra({required int ticketId, double? montoRealPagado}) {
+  Future<bool> confirmarCompra({required String ticketId, double? montoRealPagado}) {
     return ticketTableRepository.confirmarCompra(
       ticketId: ticketId,
       montoRealPagado: montoRealPagado,
     );
+  }
+
+  String _buildTicketDateTimeId(String fechaIso) {
+    final dt = DateTime.tryParse(fechaIso)?.toUtc() ?? DateTime.now().toUtc();
+    return 'ticket_${dt.year.toString().padLeft(4, '0')}'
+        '${dt.month.toString().padLeft(2, '0')}'
+        '${dt.day.toString().padLeft(2, '0')}_'
+        '${dt.hour.toString().padLeft(2, '0')}'
+        '${dt.minute.toString().padLeft(2, '0')}'
+        '${dt.second.toString().padLeft(2, '0')}'
+        '${dt.millisecond.toString().padLeft(3, '0')}'
+        '${dt.microsecond.toString().padLeft(3, '0')}';
   }
 
   Future<String?> buscarNombreProductoPorCodigo(String codigo) {

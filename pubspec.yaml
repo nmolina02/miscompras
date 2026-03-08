@@ -42,6 +42,7 @@ dependencies:
   pdf: ^3.11.3
   printing: ^5.14.2
   gallery_saver_plus: ^3.2.8
+  file_picker: ^8.1.7
 
 dev_dependencies:
   flutter_test:

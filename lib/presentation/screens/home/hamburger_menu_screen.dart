@@ -1,4 +1,5 @@
 import 'package:mi_compra_mayorista/config/theme/app_theme.dart';
+import 'package:mi_compra_mayorista/presentation/providers/database_backup_provider.dart';
 import 'package:mi_compra_mayorista/presentation/providers/ticket_exporter_provider.dart';
 import 'package:mi_compra_mayorista/presentation/providers/theme_settings_provider.dart';
 import 'package:flutter/material.dart';
@@ -90,13 +91,13 @@ class HamburgerDrawer extends StatelessWidget {
             Container(
               height: 60,
               padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(color: Colors.blueAccent),
-              child: const Align(
+              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
+              child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Menú',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -121,16 +122,12 @@ class HamburgerDrawer extends StatelessWidget {
             _SettingsOptions(
               title: 'Exportar Base de Datos',
               icon: Icons.file_download_outlined,
-              onTap: () {
-                // TODO: Implementar exportación de base de datos
-              },
+              onTap: () => DatabaseBackupProvider.instance.exportarBaseDeDatos(rootContext),
             ).toListTile(context),
             _SettingsOptions(
               title: 'Importar Base de Datos',
               icon: Icons.file_upload_outlined,
-              onTap: () {
-                // TODO: Implementar importación de base de datos
-              },
+              onTap: () => DatabaseBackupProvider.instance.importarBaseDeDatos(rootContext),
             ).toListTile(context),
           ],
         ),

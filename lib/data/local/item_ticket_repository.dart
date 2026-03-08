@@ -32,7 +32,7 @@ class ItemTicketRepository {
     return db.insert(
       'item_ticket',
       {
-        'ticket_id': _parseIntId(item.ticket.id),
+        'ticket_id': item.ticket.id.trim(),
         'producto_id': item.producto.codigoDeBarras.trim(),
         'cantidad': item.cantidad,
         'precio_unitario_aplicado': item.precioUnitarioAplicado,
@@ -65,7 +65,7 @@ class ItemTicketRepository {
     }
 
     final row = rows.first;
-    final ticket = await _ticketRepository.getById((row['ticket_id'] as int).toString(), executor: db);
+    final ticket = await _ticketRepository.getById((row['ticket_id'] as String?) ?? '', executor: db);
     if (ticket == null) {
       return null;
     }
@@ -112,7 +112,7 @@ class ItemTicketRepository {
       WHERE it.ticket_id = ?
       ORDER BY it.id ASC
       ''',
-      [_parseIntId(ticketId)],
+      [ticketId.trim()],
     );
 
     return rows.map((row) {
@@ -151,7 +151,7 @@ class ItemTicketRepository {
     final count = await db.update(
       'item_ticket',
       {
-        'ticket_id': _parseIntId(item.ticket.id),
+        'ticket_id': item.ticket.id.trim(),
         'producto_id': item.producto.codigoDeBarras.trim(),
         'cantidad': item.cantidad,
         'precio_unitario_aplicado': item.precioUnitarioAplicado,
@@ -181,7 +181,7 @@ class ItemTicketRepository {
              p.nombre AS producto_nombre,
              r.id AS rubro_id, r.nombre AS rubro_nombre
       FROM item_ticket it
-      INNER JOIN ticket t ON t.id = it.ticket_id
+      INNER JOIN ticket t ON t.ticket_datetime = it.ticket_id
       INNER JOIN comercio c ON c.id = t.comercio_id
       INNER JOIN producto p ON p.codigo_barras = it.producto_id
       LEFT JOIN rubro r ON r.id = p.rubro_id
@@ -197,7 +197,7 @@ class ItemTicketRepository {
     }
 
     final row = rows.first;
-    final ticket = await _ticketRepository.getById((row['ticket_id'] as int).toString(), executor: db);
+    final ticket = await _ticketRepository.getById((row['ticket_id'] as String?) ?? '', executor: db);
     if (ticket == null) {
       return null;
     }

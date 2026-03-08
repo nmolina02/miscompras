@@ -2,7 +2,7 @@ import 'package:mi_compra_mayorista/data/local/compra_repository.dart';
 import 'package:flutter/material.dart';
 
 class _CompraItem {
-	final int ticketId;
+	final String ticketId;
 	final String fecha;
 	final String comercio;
 	final double importeTotal;
@@ -26,7 +26,7 @@ class _EliminarCompraScreenState extends State<EliminarCompraScreen> {
 	final CompraRepository _compraRepository = CompraRepository.instance;
 
 	List<_CompraItem> _compras = [];
-	final Set<int> _seleccionados = <int>{};
+	final Set<String> _seleccionados = <String>{};
 	bool _cargando = true;
 	bool _eliminando = false;
 
@@ -82,7 +82,7 @@ class _EliminarCompraScreenState extends State<EliminarCompraScreen> {
 		}
 	}
 
-	void _toggleSeleccion(int ticketId, bool seleccionado) {
+	void _toggleSeleccion(String ticketId, bool seleccionado) {
 		setState(() {
 			if (seleccionado) {
 				_seleccionados.add(ticketId);

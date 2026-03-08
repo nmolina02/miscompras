@@ -2,6 +2,7 @@ import 'package:mi_compra_mayorista/presentation/screens/actions/new_buying_scre
 import 'package:mi_compra_mayorista/presentation/screens/actions/confirmation_buying_screen/confirmation_buying_screen.dart';
 import 'package:mi_compra_mayorista/presentation/screens/actions/delete_buying_screen/delete_buying_screen.dart';
 import 'package:mi_compra_mayorista/presentation/screens/actions/history_buying_screen/history_buying_screen.dart';
+import 'package:mi_compra_mayorista/presentation/screens/actions/product_edit/product_edit.dart';
 import 'package:flutter/material.dart';
 
 // Pantalla de detalle para cada opción
@@ -26,6 +27,8 @@ class ActionsScreen extends StatelessWidget {
         return const EliminarCompraScreen();
       /*case 'Reportes / Estadísticas':
         return const ReportesEstadisticasScreen();*/
+      case 'Editar Productos':
+        return const DatabaseEditProductsScreen();
       default:
         return Scaffold(
           appBar: AppBar(
