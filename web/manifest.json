@@ -1,6 +1,6 @@
 {
-    "name": "mi_compra_mayorista",
-    "short_name": "mi_compra_mayorista",
+    "name": "miscompras",
+    "short_name": "miscompras",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

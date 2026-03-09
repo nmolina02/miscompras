@@ -1,13 +1,14 @@
-import 'package:mi_compra_mayorista/data/local/item_ticket_repository.dart';
-import 'package:mi_compra_mayorista/data/local/producto_repository.dart';
-import 'package:mi_compra_mayorista/data/local/compra_repository.dart';
-import 'package:mi_compra_mayorista/data/local/comercio_repository.dart';
-import 'package:mi_compra_mayorista/presentation/screens/actions/new_buying_screen/widgets/item_ticket_usuario.dart';
-import 'package:mi_compra_mayorista/presentation/screens/actions/new_buying_screen/barcode_scanner_page.dart';
-import 'package:mi_compra_mayorista/presentation/screens/actions/new_buying_screen/models/compra_borrador.dart';
-import 'package:mi_compra_mayorista/presentation/screens/actions/new_buying_screen/widgets/lugar_compra_field.dart';
-import 'package:mi_compra_mayorista/presentation/screens/actions/new_buying_screen/widgets/producto_ticket_card.dart';
-import 'package:mi_compra_mayorista/presentation/screens/actions/new_buying_screen/widgets/resumen_compra_footer.dart';
+import 'package:miscompras/data/local/item_ticket_repository.dart';
+import 'package:miscompras/data/local/producto_repository.dart';
+import 'package:miscompras/data/local/compra_repository.dart';
+import 'package:miscompras/data/local/comercio_repository.dart';
+import 'package:miscompras/presentation/screens/actions/new_buying_screen/widgets/item_ticket_usuario.dart';
+import 'package:miscompras/presentation/screens/actions/new_buying_screen/barcode_scanner_page.dart';
+import 'package:miscompras/presentation/screens/actions/new_buying_screen/models/compra_borrador.dart';
+import 'package:miscompras/presentation/screens/actions/new_buying_screen/widgets/lugar_compra_field.dart';
+import 'package:miscompras/presentation/screens/actions/new_buying_screen/widgets/producto_ticket_card.dart';
+import 'package:miscompras/presentation/screens/actions/new_buying_screen/widgets/producto_suelto_ticket_card.dart';
+import 'package:miscompras/presentation/screens/actions/new_buying_screen/widgets/resumen_compra_footer.dart';
 import 'package:flutter/material.dart';
 
 class NuevaCompraScreen extends StatefulWidget {
@@ -41,6 +42,9 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
 
   List<String> _historialRubros = [];
   List<String> _rubrosFiltrados = [];
+  final Set<ItemTicketUsuario> _nombreProductoSueltoTocado = <ItemTicketUsuario>{};
+  final Set<ItemTicketUsuario> _codigoProductoValidado = <ItemTicketUsuario>{};
+  final Set<ItemTicketUsuario> _codigoProductoEscaneado = <ItemTicketUsuario>{};
 
   @override
   void initState() {
@@ -68,7 +72,13 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
     setState(() {
       _historialLugares = comercios.map((c) => c.nombre).toList();
       _historialProductos = productos
-          .map((p) => ItemTicketUsuario(nombre: p.nombre, codigoDeBarras: p.codigoDeBarras))
+          .map(
+            (p) => ItemTicketUsuario(
+              nombre: p.nombre,
+              codigoDeBarras: p.codigoDeBarras,
+              esProductoSuelto: _esCodigoProductoSuelto(p.codigoDeBarras),
+            ),
+          )
           .toList();
       _historialRubros = rubros.map((r) => r.nombre).toList();
     });
@@ -98,12 +108,29 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
     _guardarBorrador();
   }
 
-  void _filtrarProductos(String query) {
+  bool _esCodigoProductoSuelto(String codigo) {
+    final codigoLimpio = codigo.trim();
+    return codigoLimpio.length >= 21 && RegExp(r'^\d+$').hasMatch(codigoLimpio);
+  }
+
+  List<ItemTicketUsuario> _obtenerHistorialProductosPorTipo({
+    required bool esProductoSuelto,
+  }) {
+    return _historialProductos
+        .where((producto) => producto.esProductoSuelto == esProductoSuelto)
+        .toList();
+  }
+
+  void _filtrarProductos(String query, {required bool esProductoSuelto}) {
+    final historialFiltrado = _obtenerHistorialProductosPorTipo(
+      esProductoSuelto: esProductoSuelto,
+    );
+
     setState(() {
       if (query.isEmpty) {
-        _productosFiltrados = _historialProductos;
+        _productosFiltrados = historialFiltrado;
       } else {
-        _productosFiltrados = _historialProductos
+        _productosFiltrados = historialFiltrado
             .where(
               (producto) => producto.nombreController.text
                   .toLowerCase()
@@ -130,10 +157,86 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
 
   void _agregarProducto() {
     setState(() {
-      _productos.add(ItemTicketUsuario());
+      final nuevoProducto = ItemTicketUsuario();
+      _productos.add(nuevoProducto);
       _productoExpandidoIndex = _productos.length - 1;
     });
     _guardarBorrador();
+  }
+
+  void _agregarProductoSuelto() {
+    setState(() {
+      _productos.add(ItemTicketUsuario(esProductoSuelto: true));
+      _productoExpandidoIndex = _productos.length - 1;
+    });
+    _guardarBorrador();
+  }
+
+  bool _tieneInfoCargadaProductoSuelto(ItemTicketUsuario producto) {
+    final tieneCodigo = producto.codigoBarrasController.text.trim().isNotEmpty;
+    final tieneRubro = producto.rubroController.text.trim().isNotEmpty;
+    final tienePrecio = producto.precioUnitario > 0;
+    final tieneDescuento = producto.cantidadDescuento > 0 || producto.precioDescuento > 0;
+    final tieneUnidadDistinta = producto.unidadMedida.trim().isNotEmpty && producto.unidadMedida.trim().toLowerCase() != 'unidad';
+    return tieneCodigo || tieneRubro || tienePrecio || tieneDescuento || tieneUnidadDistinta;
+  }
+
+  void _limpiarInfoCargadaProductoSuelto(ItemTicketUsuario producto) {
+    producto.codigoBarrasController.clear();
+    producto.codigoDeBarras = '';
+    producto.rubroController.clear();
+    producto.rubro = '';
+    producto.unidadMedida = 'unidad';
+    producto.precioUnitario = 0.0;
+    producto.precioController.text = '0';
+    producto.cantidadDescuento = 0;
+    producto.cantidadDescuentoController.text = '0';
+    producto.precioDescuento = 0.0;
+    producto.precioDescuentoController.text = '0';
+  }
+
+  Future<bool> _confirmarEdicionNombreProductoSuelto(ItemTicketUsuario producto) async {
+    if (!_nombreProductoSueltoTocado.contains(producto)) {
+      _nombreProductoSueltoTocado.add(producto);
+      return true;
+    }
+
+    if (!_tieneInfoCargadaProductoSuelto(producto)) {
+      return true;
+    }
+
+    final confirma = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Cambiar nombre del producto'),
+          content: const Text(
+            'Si cambia el nombre, se borrará la información cargada de este producto. ¿Desea continuar?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Confirmar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirma == true) {
+      setState(() {
+        _limpiarInfoCargadaProductoSuelto(producto);
+      });
+      _guardarBorrador();
+      return true;
+    }
+
+    producto.nombreFocusNode.unfocus();
+    return false;
   }
 
   Future<void> _autocompletarCodigoDeBarrasParaProductoSuelto(ItemTicketUsuario producto) async {
@@ -226,138 +329,12 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
     }
   }
 
-  Future<void> _calcularPrecioParaProductoSuelto(ItemTicketUsuario producto) async {
-    // Para productos sueltos, el código se genera desde el nombre y queda con 21+ dígitos numéricos.
-    final codigo = producto.codigoBarrasController.text.trim();
-    final esProductoSuelto = codigo.length >= 21 && codigo.codeUnits.every((unit) => unit >= 48 && unit <= 57);
-    if (!esProductoSuelto) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Primero genere el código del producto suelto para calcular precio por kilo/litro.')),
-      );
-      return;
-    }
-
-    String cantidadInput = '';
-    String precioInput = '';
-
-    try {
-      final data = await showDialog<Map<String, String>>(
-        context: context,
-        builder: (dialogContext) {
-          return AlertDialog(
-            title: const Text('Calculo de precio por kilo/litro'),
-            scrollable: true,
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextFormField(
-                  initialValue: cantidadInput,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: false),
-                  decoration: const InputDecoration(
-                    labelText: 'Cantidad (gramos/mililitros)',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  onChanged: (value) => cantidadInput = value,
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  initialValue: precioInput,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Precio',
-                    prefixText: '\$ ',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  onChanged: (value) => precioInput = value,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  final cantidad = int.tryParse(cantidadInput.trim());
-                  final precio = double.tryParse(precioInput.trim().replaceAll(',', '.'));
-
-                  if (cantidad == null || cantidad <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Cantidad inválida.')),
-                    );
-                    return;
-                  }
-
-                  if (precio == null || precio <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Precio inválido.')),
-                    );
-                    return;
-                  }
-
-                  Navigator.of(dialogContext).pop({
-                    'cantidad': cantidadInput.trim(),
-                    'precio': precioInput.trim(),
-                  });
-                },
-                child: const Text('Aceptar'),
-              ),
-            ],
-          );
-        },
-      );
-
-      if (data == null || !mounted) {
-        return;
-      }
-
-      final cantidad = int.tryParse(data['cantidad'] ?? '');
-      final precio = double.tryParse((data['precio'] ?? '').replaceAll(',', '.'));
-
-      if (cantidad == null || cantidad <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cantidad inválida.')),
-        );
-        return;
-      }
-
-      if (precio == null || precio <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Precio inválido.')),
-        );
-        return;
-      }
-
-      if (!_productos.contains(producto)) {
-        return;
-      }
-
-      final precioCalculado = (precio * 1000) / cantidad;
-      setState(() {
-        producto.cantidad = 1;
-        producto.precioUnitario = precioCalculado;
-        producto.precioController.text = precioCalculado.toStringAsFixed(2);
-      });
-      _guardarBorrador();
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo calcular el precio del producto suelto.')),
-      );
-    }
-  }
-
   void _eliminarProducto(int index) {
     setState(() {
+      final producto = _productos[index];
+      _nombreProductoSueltoTocado.remove(producto);
+      _codigoProductoValidado.remove(producto);
+      _codigoProductoEscaneado.remove(producto);
       _productos.removeAt(index);
 
       if (_productos.isEmpty) {
@@ -379,6 +356,8 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
 
     _lugarController.text = borrador.lugar;
     _productos = borrador.productos.map((item) => item.toItem()).toList();
+    _codigoProductoValidado.clear();
+    _codigoProductoEscaneado.clear();
     _productoExpandidoIndex = _productos.isNotEmpty ? _productos.length - 1 : null;
   }
 
@@ -493,8 +472,19 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
     return _productos.every((item) => item.nombreController.text.trim().isNotEmpty);
   }
 
+  bool _codigosProductosNormalesValidados() {
+    return _productos
+        .where((item) => !item.esProductoSuelto)
+        .every((item) => _codigoProductoValidado.contains(item) || _codigoProductoEscaneado.contains(item));
+  }
+
   bool _puedeFinalizarCompra() {
-    return _productos.isNotEmpty && _tieneComercioValido() && _tienenCodigoDeBarras() && _tienenNombre() && _calcularTotal() > 0;
+    return _productos.isNotEmpty &&
+        _tieneComercioValido() &&
+        _tienenCodigoDeBarras() &&
+        _tienenNombre() &&
+        _codigosProductosNormalesValidados() &&
+        _productos.every((item) => item.total > 0);
   }
 
   Future<void> _confirmarFinalizarCompra() async {
@@ -511,6 +501,15 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('El monto total debe ser mayor a 0.'),
+        ),
+      );
+      return;
+    }
+
+    if (!_codigosProductosNormalesValidados()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debe validar con la tilde cada código de barras ingresado manualmente.'),
         ),
       );
       return;
@@ -596,6 +595,11 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
               'nombre': item.nombreController.text.trim(),
               'rubro': item.rubroController.text.trim(),
               'cantidad': item.cantidad,
+                'unidad_medida': item.esProductoSuelto
+                  ? item.unidadMedida.trim().isEmpty
+                    ? 'unidad'
+                    : item.unidadMedida.trim()
+                  : 'unidad',
               'precio_unitario': item.precioUnitario,
               'cantidad_descuento': item.cantidadDescuento,
               'precio_descuento': item.precioDescuento,
@@ -624,6 +628,9 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
       }
 
       _productos = [];
+      _nombreProductoSueltoTocado.clear();
+      _codigoProductoValidado.clear();
+      _codigoProductoEscaneado.clear();
       _productoExpandidoIndex = null;
       _productosFiltrados = [];
       _lugaresFiltrados = [];
@@ -651,6 +658,15 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
       return;
     }
 
+    await _setearNombreProducto(producto, code, lugar, vieneDeEscaneo: true);
+  }
+
+  Future<void> _setearNombreProducto(
+    ItemTicketUsuario producto,
+    String code,
+    String lugar, {
+    required bool vieneDeEscaneo,
+  }) async {
     setState(() {
       producto.codigoBarrasController.text = code;
     });
@@ -660,26 +676,43 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
       nombre = await _buscarNombreProductoPorCodigo(code);
     } catch (_) {
       nombre = null;
-    }
 
-    if (!mounted) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo buscar el producto por código de barras.'),
+        ),
+      );
       return;
     }
-
-    setState(() {
-      producto.nombreController.text = nombre ?? 'Producto $code';
-    });
 
     await _cargarUltimaInfoProducto(producto, lugar);
 
+    setState(() {
+      if (nombre != null) {
+        producto.nombreController.text = nombre;
+      }
+
+      _codigoProductoValidado.remove(producto);
+      _codigoProductoEscaneado.remove(producto);
+      if (vieneDeEscaneo) {
+        _codigoProductoEscaneado.add(producto);
+      } else if (nombre != null) {
+        _codigoProductoValidado.add(producto);
+      }
+    });
+
     if (!mounted) {
       return;
     }
 
-    if (nombre == null) {
+    if (nombre == null || nombre == 'Product Not Found — Go-UPC') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('En este momento, no se pudo identificar el producto.'),
+          content: Text('El código de barras ingresado no corresponde a un producto válido.'),
         ),
       );
     }
@@ -704,6 +737,10 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
         producto.rubroController.text = productoHistorial.rubroController.text;
       }
 
+      producto.unidadMedida = productoHistorial.unidadMedida.trim().isEmpty
+          ? 'unidad'
+          : productoHistorial.unidadMedida;
+
       if (productoHistorial.precioController.text.isNotEmpty) {
         producto.precioUnitario = double.tryParse(productoHistorial.precioController.text) ?? 0.0;
         producto.precioController.text = producto.precioUnitario.toString();
@@ -718,6 +755,8 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
         producto.precioDescuento = double.tryParse(productoHistorial.precioDescuentoController.text) ?? 0.0;
         producto.precioDescuentoController.text = producto.precioDescuento.toString();
       }
+
+      _nombreProductoSueltoTocado.remove(producto);
     });
 
     _guardarBorrador();
@@ -789,12 +828,110 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     itemBuilder: (context, index) {
                       final producto = _productos[index];
+                      if (producto.esProductoSuelto) {
+                        return ProductoSueltoTicketCard(
+                          producto: producto,
+                          index: index,
+                          estaExpandido: _productoExpandidoIndex == index,
+                          productosFiltrados: _productosFiltrados,
+                          historialProductos: _obtenerHistorialProductosPorTipo(esProductoSuelto: true),
+                          rubrosFiltrados: _rubrosFiltrados,
+                          historialRubros: _historialRubros,
+                          onExpand: () {
+                            setState(() {
+                              _productoExpandidoIndex = index;
+                              _productosFiltrados = [];
+                              _rubrosFiltrados = [];
+                            });
+                          },
+                          onCollapse: () {
+                            setState(() {
+                              _productoExpandidoIndex = null;
+                              _productosFiltrados = [];
+                              _rubrosFiltrados = [];
+                            });
+                          },
+                          onScaleProduct: () async {
+                            await _autocompletarCodigoDeBarrasParaProductoSuelto(producto);
+                          },
+                          onDelete: () {
+                            _nombreProductoSueltoTocado.remove(producto);
+                            producto.dispose();
+                            _eliminarProducto(index);
+                          },
+                          onTapNombreProducto: () => _confirmarEdicionNombreProductoSuelto(producto),
+                          onFiltrarProductos: (query) => _filtrarProductos(
+                            query,
+                            esProductoSuelto: true,
+                          ),
+                          onFiltrarRubros: _filtrarRubros,
+                          onMostrarHistorial: () {
+                            setState(() {
+                              _productosFiltrados = _obtenerHistorialProductosPorTipo(
+                                esProductoSuelto: true,
+                              );
+                            });
+                          },
+                          onMostrarHistorialRubros: () {
+                            setState(() {
+                              _rubrosFiltrados = _historialRubros;
+                            });
+                          },
+                          onSelectNombre: (productoSeleccionado) async {
+                            producto.nombreController.text = productoSeleccionado.nombreController.text;
+                            producto.codigoBarrasController.text = productoSeleccionado.codigoBarrasController.text;
+                            producto.nombreFocusNode.unfocus();
+
+                            // si selecciono un producto del historial, cargo su última info conocida del mismo
+                            await _cargarUltimaInfoProducto(producto, lugarSeleccionado);
+
+                            _guardarBorrador();
+                          },
+                          onLimpiarProductosFiltrados: () {
+                            setState(() {
+                              _productosFiltrados = [];
+                            });
+                          },
+                          onSelectRubro: (rubro) {
+                            setState(() {
+                              producto.rubroController.text = rubro;
+                            });
+                            producto.rubroFocusNode.unfocus();
+                            _guardarBorrador();
+                          },
+                          onLimpiarRubrosFiltrados: () {
+                            setState(() {
+                              _rubrosFiltrados = [];
+                            });
+                          },
+                          onCodigoChanged: (_) => _guardarBorrador(),
+                          onPrecioChanged: (value) {
+                            setState(() {
+                              producto.precioUnitario = double.tryParse(value) ?? 0.0;
+                            });
+                            _guardarBorrador();
+                          },
+                          onCantidadChanged: (value) {
+                            setState(() {
+                              producto.cantidad = int.tryParse(value) ?? 1;
+                            });
+                            _guardarBorrador();
+                          },
+                          onUnidadChanged: (value) {
+                            setState(() {
+                              producto.unidadMedida = value;
+                            });
+                            _guardarBorrador();
+                          },
+                        );
+                      }
+
                       return ProductoTicketCard(
                         producto: producto,
                         index: index,
                         estaExpandido: _productoExpandidoIndex == index,
                         productosFiltrados: _productosFiltrados,
-                        historialProductos: _historialProductos,
+                        historialProductos: _obtenerHistorialProductosPorTipo(esProductoSuelto: false),
                         rubrosFiltrados: _rubrosFiltrados,
                         historialRubros: _historialRubros,
                         onExpand: () {
@@ -811,22 +948,29 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
                             _rubrosFiltrados = [];
                           });
                         },
-                        onScaleProduct: () async {
-                          await _autocompletarCodigoDeBarrasParaProductoSuelto(producto);
-                        },
-                        onCalculateKiloPrice: () async {
-                          await _calcularPrecioParaProductoSuelto(producto);
-                        },
                         onDelete: () {
+                          _codigoProductoValidado.remove(producto);
+                          _codigoProductoEscaneado.remove(producto);
                           producto.dispose();
                           _eliminarProducto(index);
                         },
                         onScan: () => _escanearProducto(producto, index, lugarSeleccionado),
-                        onFiltrarProductos: _filtrarProductos,
+                        onCheckCodigo: () => _setearNombreProducto(
+                          producto,
+                          producto.codigoBarrasController.text.trim(),
+                          lugarSeleccionado,
+                          vieneDeEscaneo: false,
+                        ),
+                        onFiltrarProductos: (query) => _filtrarProductos(
+                          query,
+                          esProductoSuelto: false,
+                        ),
                         onFiltrarRubros: _filtrarRubros,
                         onMostrarHistorial: () {
                           setState(() {
-                            _productosFiltrados = _historialProductos;
+                            _productosFiltrados = _obtenerHistorialProductosPorTipo(
+                              esProductoSuelto: false,
+                            );
                           });
                         },
                         onMostrarHistorialRubros: () {
@@ -861,7 +1005,13 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
                             _rubrosFiltrados = [];
                           });
                         },
-                        onCodigoChanged: (_) => _guardarBorrador(),
+                        onCodigoChanged: (_) {
+                          setState(() {
+                            _codigoProductoValidado.remove(producto);
+                            _codigoProductoEscaneado.remove(producto);
+                          });
+                          _guardarBorrador();
+                        },
                         onPrecioChanged: (value) {
                           setState(() {
                             producto.precioUnitario = double.tryParse(value) ?? 0.0;
@@ -908,6 +1058,7 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
                     tieneProductos: _productos.isNotEmpty,
                     lugarDefinido: _tieneComercioValido(),
                     onAgregarProducto: _agregarProducto,
+                    onAgregarProductoSuelto: _agregarProductoSuelto,
                     onFinalizarCompra: _confirmarFinalizarCompra,
                     onCancelarCompra: _confirmarCancelarCompra,
                   ),

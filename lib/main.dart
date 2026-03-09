@@ -1,6 +1,6 @@
-import 'package:mi_compra_mayorista/config/theme/app_theme.dart';
-import 'package:mi_compra_mayorista/presentation/providers/theme_settings_provider.dart';
-import 'package:mi_compra_mayorista/presentation/screens/home/home_screen.dart';
+import 'package:miscompras/config/theme/app_theme.dart';
+import 'package:miscompras/presentation/providers/theme_settings_provider.dart';
+import 'package:miscompras/presentation/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
 
 void main() {

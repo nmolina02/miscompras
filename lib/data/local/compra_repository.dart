@@ -1,9 +1,9 @@
-import 'package:mi_compra_mayorista/data/local/app_database.dart';
-import 'package:mi_compra_mayorista/data/local/comercio_repository.dart';
-import 'package:mi_compra_mayorista/data/local/item_ticket_repository.dart';
-import 'package:mi_compra_mayorista/data/local/producto_repository.dart';
-import 'package:mi_compra_mayorista/data/local/rubro_repository.dart';
-import 'package:mi_compra_mayorista/data/local/ticket_repository.dart';
+import 'package:miscompras/data/local/app_database.dart';
+import 'package:miscompras/data/local/comercio_repository.dart';
+import 'package:miscompras/data/local/item_ticket_repository.dart';
+import 'package:miscompras/data/local/producto_repository.dart';
+import 'package:miscompras/data/local/rubro_repository.dart';
+import 'package:miscompras/data/local/ticket_repository.dart';
 import 'package:sqflite/sqflite.dart';
 
 class Compra {
@@ -85,7 +85,9 @@ class CompraRepository {
         final item = items[index];
 
         final rubroLimpio = (item['rubro'] as String? ?? '').trim();
-        final rubroId = await rubroRepository.upsertByNombre(rubroLimpio, executor: txn);
+        final int? rubroId = rubroLimpio.isEmpty
+            ? null
+            : await rubroRepository.upsertByNombre(rubroLimpio, executor: txn);
 
         final nombre = (item['nombre'] as String? ?? '').trim();
         final codigo = (item['codigo_barras'] as String? ?? '').trim();
@@ -104,12 +106,16 @@ class CompraRepository {
 
         await txn.update(
           'producto',
-          {'nombre': nombrePersistir},
+          {
+            'nombre': nombrePersistir,
+            'rubro_id': rubroId,
+          },
           where: 'codigo_barras = ?',
           whereArgs: [codigoPersistir],
         );
 
         final cantidad = (item['cantidad'] as num?)?.toInt() ?? 0;
+        final unidadMedida = (item['unidad_medida'] as String? ?? 'unidad').trim();
         final precioUnitario = (item['precio_unitario'] as num?)?.toDouble() ?? 0;
         final cantidadDescuento = (item['cantidad_descuento'] as num?)?.toInt() ?? 0;
         final precioDescuento = (item['precio_descuento'] as num?)?.toDouble() ?? 0;
@@ -119,6 +125,7 @@ class CompraRepository {
           'ticket_id': ticketDateTimeId,
           'producto_id': codigoPersistir,
           'cantidad': cantidad,
+          'unidad_medida': unidadMedida.isEmpty ? 'unidad' : unidadMedida,
           'precio_unitario_aplicado': precioUnitario,
           'cantidad_descuento': cantidadDescuento,
           'precio_descuento': precioDescuento,

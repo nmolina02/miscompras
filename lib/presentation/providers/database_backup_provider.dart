@@ -1,6 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:mi_compra_mayorista/data/local/app_database.dart';
+import 'package:miscompras/data/local/app_database.dart';
 
 class DatabaseBackupProvider {
   DatabaseBackupProvider._();

@@ -1,4 +1,4 @@
-# mi_compra_mayorista
+# MisCompras
 
 A new Flutter project.
 

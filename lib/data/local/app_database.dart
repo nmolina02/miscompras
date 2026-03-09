@@ -10,7 +10,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   static const _databaseName = 'supermercado_mobile.db';
-  static const _databaseVersion = 2;
+    static const _databaseVersion = 3;
 
   Database? _database;
 
@@ -222,11 +222,14 @@ class AppDatabase {
             'item_ticket',
             columns: ['id'],
             where:
-                'ticket_id = ? AND producto_id = ? AND cantidad = ? AND precio_unitario_aplicado = ? AND cantidad_descuento = ? AND precio_descuento = ? AND total_item = ?',
+                'ticket_id = ? AND producto_id = ? AND cantidad = ? AND unidad_medida = ? AND precio_unitario_aplicado = ? AND cantidad_descuento = ? AND precio_descuento = ? AND total_item = ?',
             whereArgs: [
               ticketId,
               productoId,
               ((row['cantidad'] as num?) ?? 0).toInt(),
+              ((row['unidad_medida'] as String?) ?? 'unidad').trim().isEmpty
+                  ? 'unidad'
+                  : ((row['unidad_medida'] as String?) ?? 'unidad').trim(),
               ((row['precio_unitario_aplicado'] as num?) ?? 0).toDouble(),
               ((row['cantidad_descuento'] as num?) ?? 0).toInt(),
               ((row['precio_descuento'] as num?) ?? 0).toDouble(),
@@ -244,6 +247,9 @@ class AppDatabase {
               'ticket_id': ticketId,
               'producto_id': productoId,
               'cantidad': ((row['cantidad'] as num?) ?? 0).toInt(),
+                'unidad_medida': ((row['unidad_medida'] as String?) ?? 'unidad').trim().isEmpty
+                  ? 'unidad'
+                  : ((row['unidad_medida'] as String?) ?? 'unidad').trim(),
               'precio_unitario_aplicado': ((row['precio_unitario_aplicado'] as num?) ?? 0).toDouble(),
               'cantidad_descuento': ((row['cantidad_descuento'] as num?) ?? 0).toInt(),
               'precio_descuento': ((row['precio_descuento'] as num?) ?? 0).toDouble(),
@@ -311,6 +317,7 @@ class AppDatabase {
         'ticket_id',
         'producto_id',
         'cantidad',
+        'unidad_medida',
         'precio_unitario_aplicado',
         'cantidad_descuento',
         'precio_descuento',
@@ -332,6 +339,10 @@ class AppDatabase {
 
       final missing = entry.value.difference(present);
       if (table == 'ticket' && missing.length == 1 && missing.contains('ticket_datetime') && present.contains('id')) {
+        continue;
+      }
+
+      if (table == 'item_ticket' && missing.length == 1 && missing.contains('unidad_medida')) {
         continue;
       }
 
@@ -457,6 +468,12 @@ class AppDatabase {
 
       await db.execute('PRAGMA foreign_keys = ON');
     }
+
+    if (oldVersion < 3) {
+      await db.execute(
+        "ALTER TABLE item_ticket ADD COLUMN unidad_medida TEXT NOT NULL DEFAULT 'unidad'",
+      );
+    }
   }
 
   Future<void> _createSchema(Database db) async {
@@ -506,6 +523,7 @@ class AppDatabase {
         ticket_id TEXT NOT NULL,
         producto_id TEXT NOT NULL,
         cantidad INTEGER NOT NULL,
+        unidad_medida TEXT NOT NULL DEFAULT 'unidad',
         precio_unitario_aplicado REAL NOT NULL,
         cantidad_descuento INTEGER NOT NULL DEFAULT 0,
         precio_descuento REAL NOT NULL DEFAULT 0,

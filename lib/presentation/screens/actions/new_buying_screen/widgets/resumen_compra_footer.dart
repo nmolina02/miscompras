@@ -6,6 +6,7 @@ class ResumenCompraFooter extends StatelessWidget {
   final bool tieneProductos;
   final bool lugarDefinido;
   final VoidCallback onAgregarProducto;
+  final VoidCallback onAgregarProductoSuelto;
   final VoidCallback onFinalizarCompra;
   final VoidCallback onCancelarCompra;
 
@@ -16,6 +17,7 @@ class ResumenCompraFooter extends StatelessWidget {
     required this.lugarDefinido,
     required this.tieneProductos,
     required this.onAgregarProducto,
+    required this.onAgregarProductoSuelto,
     required this.onFinalizarCompra,
     required this.onCancelarCompra,
   });
@@ -24,17 +26,38 @@ class ResumenCompraFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: FilledButton.icon(
-            onPressed: lugarDefinido ? onAgregarProducto : null,
-            icon: const Icon(Icons.add),
-            label: const Text('Agregar Producto'),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(double.infinity, 48),
-              backgroundColor: Theme.of(context).colorScheme.primary,
+        Row(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16, top: 8, bottom: 8),
+                child: FilledButton.icon(
+                  onPressed: lugarDefinido ? onAgregarProducto : null,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Producto'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 48),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+                child: FilledButton.icon(
+                  onPressed: lugarDefinido ? onAgregarProductoSuelto : null,
+                  icon: const Icon(Icons.shopping_basket_outlined),
+                  label: const Text('Producto Suelto'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 48),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         Container(
           decoration: BoxDecoration(

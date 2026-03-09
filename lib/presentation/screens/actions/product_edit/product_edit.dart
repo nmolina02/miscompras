@@ -1,7 +1,7 @@
-import 'package:mi_compra_mayorista/data/local/producto_repository.dart';
-import 'package:mi_compra_mayorista/data/local/rubro_repository.dart';
-import 'package:mi_compra_mayorista/domain/entities/producto.dart';
-import 'package:mi_compra_mayorista/domain/entities/rubro.dart';
+import 'package:miscompras/data/local/producto_repository.dart';
+import 'package:miscompras/data/local/rubro_repository.dart';
+import 'package:miscompras/domain/entities/producto.dart';
+import 'package:miscompras/domain/entities/rubro.dart';
 import 'package:flutter/material.dart';
 
 class _EditableProductoRow {
@@ -456,35 +456,39 @@ class _DatabaseEditProductsScreenState extends State<DatabaseEditProductsScreen>
                                         ),
                                       Row(
                                         children: [
-                                          OutlinedButton.icon(
-                                            onPressed: (estaGuardando || estaEliminando)
-                                                ? null
-                                                : () => _eliminarProducto(row, index),
-                                            icon: estaEliminando
-                                                ? const SizedBox(
-                                                    width: 16,
-                                                    height: 16,
-                                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                                  )
-                                                : const Icon(Icons.delete_outline),
-                                            label: Text(estaEliminando ? 'Eliminando...' : 'Eliminar producto'),
-                                            style: OutlinedButton.styleFrom(
-                                              foregroundColor: Theme.of(context).colorScheme.error,
+                                          Expanded(
+                                            child: OutlinedButton.icon(
+                                              onPressed: (estaGuardando || estaEliminando)
+                                                  ? null
+                                                  : () => _eliminarProducto(row, index),
+                                              icon: estaEliminando
+                                                  ? const SizedBox(
+                                                      width: 16,
+                                                      height: 16,
+                                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                                    )
+                                                  : const Icon(Icons.delete_outline),
+                                              label: Text(estaEliminando ? 'Eliminando...' : 'Eliminar producto'),
+                                              style: OutlinedButton.styleFrom(
+                                                foregroundColor: Theme.of(context).colorScheme.error,
+                                              ),
                                             ),
                                           ),
-                                          const Spacer(),
-                                          FilledButton.icon(
-                                            onPressed: (estaGuardando || estaEliminando)
-                                                ? null
-                                                : () => _guardarProducto(row),
-                                            icon: estaGuardando
-                                                ? const SizedBox(
-                                                    width: 16,
-                                                    height: 16,
-                                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                                  )
-                                                : const Icon(Icons.save),
-                                            label: Text(estaGuardando ? 'Guardando...' : 'Guardar cambios'),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: FilledButton.icon(
+                                              onPressed: (estaGuardando || estaEliminando)
+                                                  ? null
+                                                  : () => _guardarProducto(row),
+                                              icon: estaGuardando
+                                                  ? const SizedBox(
+                                                      width: 16,
+                                                      height: 16,
+                                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                                    )
+                                                  : const Icon(Icons.save),
+                                              label: Text(estaGuardando ? 'Guardando...' : 'Guardar cambios'),
+                                            ),
                                           ),
                                         ],
                                       ),

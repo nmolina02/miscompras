@@ -6,6 +6,7 @@ class ItemTicketUsuario {
   late TextEditingController codigoBarrasController;
   late TextEditingController rubroController;
   late TextEditingController precioController;
+  late TextEditingController cantidadController;
   late TextEditingController cantidadDescuentoController;
   late TextEditingController precioDescuentoController;
 
@@ -18,6 +19,8 @@ class ItemTicketUsuario {
   double precioDescuento;
   String codigoDeBarras;
   String rubro;
+  String unidadMedida;
+  bool esProductoSuelto;
 
   ItemTicketUsuario({
     String nombre = '',
@@ -27,12 +30,15 @@ class ItemTicketUsuario {
     double precioDescuentoParametro = 0.0,
     this.codigoDeBarras = '',
     this.rubro = '',
+    this.unidadMedida = 'unidad',
+    this.esProductoSuelto = false,
   }) : precioUnitario = precioUnitarioParametro,
        precioDescuento = precioDescuentoParametro {
     nombreController = TextEditingController(text: nombre);
     codigoBarrasController = TextEditingController(text: codigoDeBarras);
     rubroController = TextEditingController(text: rubro);
     precioController = TextEditingController(text: precioUnitario.toString());
+    cantidadController = TextEditingController(text: cantidad.toString());
     cantidadDescuentoController = TextEditingController(text: cantidadDescuento.toString());
     precioDescuentoController = TextEditingController(text: precioDescuento.toString());
     nombreFocusNode = FocusNode();
@@ -40,6 +46,9 @@ class ItemTicketUsuario {
   }
 
   double get total {
+    if (esProductoSuelto) {
+      return precioUnitario;
+    }
     if (cantidadDescuento > 0 && precioDescuento > 0 && cantidad >= cantidadDescuento) {
       return cantidad * precioDescuento;
     }
@@ -51,6 +60,7 @@ class ItemTicketUsuario {
     codigoBarrasController.dispose();
     rubroController.dispose();
     precioController.dispose();
+    cantidadController.dispose();
     cantidadDescuentoController.dispose();
     precioDescuentoController.dispose();
     nombreFocusNode.dispose();

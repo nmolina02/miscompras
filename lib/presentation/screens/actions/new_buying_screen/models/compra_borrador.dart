@@ -1,4 +1,4 @@
-import 'package:mi_compra_mayorista/presentation/screens/actions/new_buying_screen/widgets/item_ticket_usuario.dart';
+import 'package:miscompras/presentation/screens/actions/new_buying_screen/widgets/item_ticket_usuario.dart';
 
 class CompraBorrador {
   final String lugar;
@@ -16,8 +16,10 @@ class ItemTicketBorrador {
   final String rubro;
   final String precioTexto;
   final int cantidad;
+  final String unidadMedida;
   final String cantidadDescuentoTexto;
   final String precioDescuentoTexto;
+  final bool esProductoSuelto;
 
   const ItemTicketBorrador({
     required this.nombre,
@@ -25,8 +27,10 @@ class ItemTicketBorrador {
     required this.rubro,
     required this.precioTexto,
     required this.cantidad,
+    required this.unidadMedida,
     required this.cantidadDescuentoTexto,
     required this.precioDescuentoTexto,
+    required this.esProductoSuelto,
   });
 
   factory ItemTicketBorrador.fromItem(ItemTicketUsuario item) {
@@ -36,8 +40,10 @@ class ItemTicketBorrador {
       rubro: item.rubroController.text,
       precioTexto: item.precioController.text,
       cantidad: item.cantidad,
+      unidadMedida: item.unidadMedida,
       cantidadDescuentoTexto: item.cantidadDescuentoController.text,
       precioDescuentoTexto: item.precioDescuentoController.text,
+      esProductoSuelto: item.esProductoSuelto,
     );
   }
 
@@ -49,6 +55,8 @@ class ItemTicketBorrador {
       precioUnitarioParametro: double.tryParse(precioTexto) ?? 0.0,
       cantidadDescuento: int.tryParse(cantidadDescuentoTexto) ?? 0,
       precioDescuentoParametro: double.tryParse(precioDescuentoTexto) ?? 0.0,
+      unidadMedida: unidadMedida,
+      esProductoSuelto: esProductoSuelto,
     );
 
     item.codigoBarrasController.text = codigoBarras;

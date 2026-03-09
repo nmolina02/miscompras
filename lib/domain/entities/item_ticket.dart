@@ -1,11 +1,12 @@
-import 'package:mi_compra_mayorista/domain/entities/producto.dart';
-import 'package:mi_compra_mayorista/domain/entities/ticket.dart';
+import 'package:miscompras/domain/entities/producto.dart';
+import 'package:miscompras/domain/entities/ticket.dart';
 
 class ItemTicket {
   final String id;
   final Ticket ticket;
   final Producto producto;
   final int cantidad;
+  final String unidadMedida;
   final double precioUnitarioAplicado;
   final int cantidadDescuento;
   final double precioDescuento;
@@ -15,6 +16,7 @@ class ItemTicket {
     required this.ticket,
     required this.producto,
     required this.cantidad,
+    this.unidadMedida = 'unidad',
     required this.precioUnitarioAplicado,
     this.cantidadDescuento = 0,
     this.precioDescuento = 0.0,
@@ -22,6 +24,6 @@ class ItemTicket {
 
   @override
   String toString() {
-    return 'ItemTicket(id: $id, ticketId: ${ticket.id}, producto: ${producto.nombre}, cantidad: $cantidad, precioUnitarioAplicado: $precioUnitarioAplicado, cantidadDescuento: $cantidadDescuento, precioDescuento: $precioDescuento)';
+    return 'ItemTicket(id: $id, ticketId: ${ticket.id}, producto: ${producto.nombre}, cantidad: $cantidad, unidadMedida: $unidadMedida, precioUnitarioAplicado: $precioUnitarioAplicado, cantidadDescuento: $cantidadDescuento, precioDescuento: $precioDescuento)';
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mi_compra_mayorista/presentation/providers/option_provider.dart';
+import 'package:miscompras/presentation/providers/option_provider.dart';
 
 // Boton de opciones en grid
 class ButtonsOptionList extends StatelessWidget {

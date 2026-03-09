@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:mi_compra_mayorista/data/local/app_database.dart';
-import 'package:mi_compra_mayorista/domain/entities/producto.dart';
-import 'package:mi_compra_mayorista/domain/entities/rubro.dart';
+import 'package:miscompras/data/local/app_database.dart';
+import 'package:miscompras/domain/entities/producto.dart';
+import 'package:miscompras/domain/entities/rubro.dart';
 import 'package:http/http.dart' as http;
 import 'package:sqflite/sqflite.dart';
 

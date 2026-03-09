@@ -1,4 +1,4 @@
-package com.example.mi_compra_mayorista
+package com.example.miscompras
 
 import io.flutter.embedding.android.FlutterActivity
 

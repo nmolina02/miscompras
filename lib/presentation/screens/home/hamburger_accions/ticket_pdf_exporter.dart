@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 import 'dart:io';
 
-import 'package:mi_compra_mayorista/data/local/compra_repository.dart';
-import 'package:mi_compra_mayorista/data/local/item_ticket_repository.dart';
+import 'package:miscompras/data/local/compra_repository.dart';
+import 'package:miscompras/data/local/item_ticket_repository.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';

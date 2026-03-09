@@ -1,4 +1,4 @@
-import 'package:mi_compra_mayorista/data/local/compra_repository.dart';
+import 'package:miscompras/data/local/compra_repository.dart';
 import 'package:flutter/material.dart';
 
 class _CompraPendiente {

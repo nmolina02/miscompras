@@ -1,7 +1,7 @@
 import 'package:miscompras/presentation/screens/actions/new_buying_screen/widgets/item_ticket_usuario.dart';
 import 'package:flutter/material.dart';
 
-class ProductoTicketCard extends StatelessWidget {
+class ProductoSueltoTicketCard extends StatelessWidget {
   final ItemTicketUsuario producto;
   final int index;
   final bool estaExpandido;
@@ -11,9 +11,9 @@ class ProductoTicketCard extends StatelessWidget {
   final List<String> historialRubros;
   final VoidCallback onExpand;
   final VoidCallback onCollapse;
+  final VoidCallback onScaleProduct;
   final VoidCallback onDelete;
-  final Future<void> Function() onScan;
-  final Future<void> Function() onCheckCodigo;
+  final Future<bool> Function() onTapNombreProducto;
   final ValueChanged<String> onFiltrarProductos;
   final ValueChanged<String> onFiltrarRubros;
   final VoidCallback onMostrarHistorial;
@@ -24,12 +24,10 @@ class ProductoTicketCard extends StatelessWidget {
   final VoidCallback onLimpiarRubrosFiltrados;
   final ValueChanged<String> onCodigoChanged;
   final ValueChanged<String> onPrecioChanged;
-  final VoidCallback onCantidadMinus;
-  final VoidCallback onCantidadPlus;
-  final ValueChanged<String> onPrecioDescuentoChanged;
-  final ValueChanged<String> onCantidadDescuentoChanged;
+  final ValueChanged<String> onCantidadChanged;
+  final ValueChanged<String> onUnidadChanged;
 
-  const ProductoTicketCard({
+  const ProductoSueltoTicketCard({
     super.key,
     required this.producto,
     required this.index,
@@ -40,9 +38,9 @@ class ProductoTicketCard extends StatelessWidget {
     required this.historialRubros,
     required this.onExpand,
     required this.onCollapse,
+    required this.onScaleProduct,
     required this.onDelete,
-    required this.onScan,
-    required this.onCheckCodigo,
+    required this.onTapNombreProducto,
     required this.onFiltrarProductos,
     required this.onFiltrarRubros,
     required this.onMostrarHistorial,
@@ -53,14 +51,30 @@ class ProductoTicketCard extends StatelessWidget {
     required this.onLimpiarRubrosFiltrados,
     required this.onCodigoChanged,
     required this.onPrecioChanged,
-    required this.onCantidadMinus,
-    required this.onCantidadPlus,
-    required this.onPrecioDescuentoChanged,
-    required this.onCantidadDescuentoChanged,
+    required this.onCantidadChanged,
+    required this.onUnidadChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    const unidadesDisponibles = <String>['unidad', 'gramos', 'mililitros'];
+    final unidadNormalizada = producto.unidadMedida.trim().toLowerCase();
+    final unidadMapeada = <String, String>{
+      'unidad': 'unidad',
+      'unidades': 'unidad',
+      'u': 'unidad',
+      'ml': 'mililitros',
+      'mililitro': 'mililitros',
+      'mililitros': 'mililitros',
+      'gr': 'gramos',
+      'g': 'gramos',
+      'gramo': 'gramos',
+      'gramos': 'gramos',
+    };
+    final unidadActual = unidadesDisponibles.contains(unidadNormalizada)
+        ? unidadNormalizada
+        : (unidadMapeada[unidadNormalizada] ?? 'unidad');
+
     final String nombreResumen = producto.nombreController.text.trim().isEmpty
         ? 'Producto ${index + 1}'
         : producto.nombreController.text.trim();
@@ -121,13 +135,17 @@ class ProductoTicketCard extends StatelessWidget {
                                 controller: producto.nombreController,
                                 focusNode: producto.nombreFocusNode,
                                 decoration: const InputDecoration(
-                                  labelText: 'Producto',
+                                  labelText: 'Producto suelto',
                                   border: OutlineInputBorder(),
                                   isDense: true,
                                 ),
                                 onChanged: onFiltrarProductos,
-                                onTap: () {
+                                onTap: () async {
                                   onExpand();
+                                  final puedeEditar = await onTapNombreProducto();
+                                  if (!puedeEditar) {
+                                    return;
+                                  }
                                   if (producto.nombreController.text.isEmpty) {
                                     onMostrarHistorial();
                                   }
@@ -172,6 +190,7 @@ class ProductoTicketCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: TextField(
+                            enabled: false, //grisa el campo y deshabilita la edición manual
                             controller: producto.codigoBarrasController,
                             decoration: const InputDecoration(
                               labelText: 'Código de barras',
@@ -179,20 +198,14 @@ class ProductoTicketCard extends StatelessWidget {
                               isDense: true,
                             ),
                             keyboardType: TextInputType.number,
-                            onTap: onExpand,
                             onChanged: onCodigoChanged,
                           ),
                         ),
                         const SizedBox(width: 8),
                         IconButton(
-                          icon: const Icon(Icons.check_rounded),
-                          tooltip: 'Confirmar código de barras',
-                          onPressed: onCheckCodigo,
-                        ),
-                        IconButton(
                           icon: const Icon(Icons.qr_code_2_rounded),
                           tooltip: 'Escanear código de barras',
-                          onPressed: onScan,
+                          onPressed: onScaleProduct,
                         ),
                       ],
                     ),
@@ -253,6 +266,50 @@ class ProductoTicketCard extends StatelessWidget {
                         Expanded(
                           flex: 2,
                           child: TextField(
+                            controller: producto.cantidadController,
+                            decoration: const InputDecoration(
+                              labelText: 'Cantidad',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            keyboardType: TextInputType.number,
+                            onChanged: onCantidadChanged,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 2,
+                          child: DropdownButtonFormField<String>(
+                            initialValue: unidadActual,
+                            isDense: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Unidad',
+                              border: OutlineInputBorder(),
+                            ),
+                            items: unidadesDisponibles
+                                .map(
+                                  (unidad) => DropdownMenuItem<String>(
+                                    value: unidad,
+                                    child: Text(unidad),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                onUnidadChanged(value);
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
                             controller: producto.precioController,
                             decoration: const InputDecoration(
                               labelText: 'Precio',
@@ -262,45 +319,6 @@ class ProductoTicketCard extends StatelessWidget {
                             ),
                             keyboardType: TextInputType.number,
                             onChanged: onPrecioChanged,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Theme.of(context).dividerColor),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.remove, size: 18),
-                                onPressed: onCantidadMinus,
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 32,
-                                  minHeight: 32,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                child: Text(
-                                  '${producto.cantidad}',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.add, size: 18),
-                                onPressed: onCantidadPlus,
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 32,
-                                  minHeight: 32,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -335,38 +353,7 @@ class ProductoTicketCard extends StatelessWidget {
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: producto.precioDescuentoController,
-                            decoration: const InputDecoration(
-                              labelText: 'Precio con descuento',
-                              prefixText: '\$ ',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                            keyboardType: TextInputType.number,
-                            onChanged: onPrecioDescuentoChanged,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: producto.cantidadDescuentoController,
-                            decoration: const InputDecoration(
-                              labelText: 'Cantidad mínima necesaria',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                            keyboardType: TextInputType.number,
-                            onChanged: onCantidadDescuentoChanged,
-                          ),
-                        ),
-                      ],
-                    ),
+                    )
                   ],
                 ),
               )

@@ -1,8 +1,8 @@
-import 'package:mi_compra_mayorista/data/local/app_database.dart';
-import 'package:mi_compra_mayorista/data/local/comercio_repository.dart';
-import 'package:mi_compra_mayorista/domain/entities/comercio.dart';
-import 'package:mi_compra_mayorista/domain/entities/item_ticket.dart';
-import 'package:mi_compra_mayorista/domain/entities/ticket.dart';
+import 'package:miscompras/data/local/app_database.dart';
+import 'package:miscompras/data/local/comercio_repository.dart';
+import 'package:miscompras/domain/entities/comercio.dart';
+import 'package:miscompras/domain/entities/item_ticket.dart';
+import 'package:miscompras/domain/entities/ticket.dart';
 import 'package:sqflite/sqflite.dart';
 
 class TicketTableRepository {

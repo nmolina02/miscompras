@@ -1,7 +1,7 @@
-import 'package:mi_compra_mayorista/config/theme/app_theme.dart';
-import 'package:mi_compra_mayorista/presentation/providers/database_backup_provider.dart';
-import 'package:mi_compra_mayorista/presentation/providers/ticket_exporter_provider.dart';
-import 'package:mi_compra_mayorista/presentation/providers/theme_settings_provider.dart';
+import 'package:miscompras/config/theme/app_theme.dart';
+import 'package:miscompras/presentation/providers/database_backup_provider.dart';
+import 'package:miscompras/presentation/providers/ticket_exporter_provider.dart';
+import 'package:miscompras/presentation/providers/theme_settings_provider.dart';
 import 'package:flutter/material.dart';
 
 // Menú Hamburguesa Lateral

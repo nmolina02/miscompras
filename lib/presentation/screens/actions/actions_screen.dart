@@ -1,8 +1,8 @@
-import 'package:mi_compra_mayorista/presentation/screens/actions/new_buying_screen/new_buying_screen.dart';
-import 'package:mi_compra_mayorista/presentation/screens/actions/confirmation_buying_screen/confirmation_buying_screen.dart';
-import 'package:mi_compra_mayorista/presentation/screens/actions/delete_buying_screen/delete_buying_screen.dart';
-import 'package:mi_compra_mayorista/presentation/screens/actions/history_buying_screen/history_buying_screen.dart';
-import 'package:mi_compra_mayorista/presentation/screens/actions/product_edit/product_edit.dart';
+import 'package:miscompras/presentation/screens/actions/new_buying_screen/new_buying_screen.dart';
+import 'package:miscompras/presentation/screens/actions/confirmation_buying_screen/confirmation_buying_screen.dart';
+import 'package:miscompras/presentation/screens/actions/delete_buying_screen/delete_buying_screen.dart';
+import 'package:miscompras/presentation/screens/actions/history_buying_screen/history_buying_screen.dart';
+import 'package:miscompras/presentation/screens/actions/product_edit/product_edit.dart';
 import 'package:flutter/material.dart';
 
 // Pantalla de detalle para cada opción

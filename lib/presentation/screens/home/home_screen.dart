@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:mi_compra_mayorista/presentation/screens/actions/actions_screen.dart';
-import 'package:mi_compra_mayorista/presentation/screens/chatbot/chatbot.dart';
-import 'package:mi_compra_mayorista/presentation/screens/home/home_options_list_screen.dart';
-import 'package:mi_compra_mayorista/presentation/screens/home/hamburger_menu_screen.dart';
-import 'package:mi_compra_mayorista/presentation/providers/option_provider.dart';
+import 'package:miscompras/presentation/screens/actions/actions_screen.dart';
+import 'package:miscompras/presentation/screens/chatbot/chatbot.dart';
+import 'package:miscompras/presentation/screens/home/home_options_list_screen.dart';
+import 'package:miscompras/presentation/screens/home/hamburger_menu_screen.dart';
+import 'package:miscompras/presentation/providers/option_provider.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

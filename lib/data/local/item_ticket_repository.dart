@@ -1,10 +1,10 @@
-import 'package:mi_compra_mayorista/data/local/app_database.dart';
-import 'package:mi_compra_mayorista/data/local/producto_repository.dart';
-import 'package:mi_compra_mayorista/data/local/ticket_repository.dart';
-import 'package:mi_compra_mayorista/domain/entities/item_ticket.dart';
-import 'package:mi_compra_mayorista/domain/entities/producto.dart';
-import 'package:mi_compra_mayorista/domain/entities/rubro.dart';
-import 'package:mi_compra_mayorista/presentation/screens/actions/new_buying_screen/widgets/item_ticket_usuario.dart';
+import 'package:miscompras/data/local/app_database.dart';
+import 'package:miscompras/data/local/producto_repository.dart';
+import 'package:miscompras/data/local/ticket_repository.dart';
+import 'package:miscompras/domain/entities/item_ticket.dart';
+import 'package:miscompras/domain/entities/producto.dart';
+import 'package:miscompras/domain/entities/rubro.dart';
+import 'package:miscompras/presentation/screens/actions/new_buying_screen/widgets/item_ticket_usuario.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ItemTicketRepository {
@@ -35,6 +35,7 @@ class ItemTicketRepository {
         'ticket_id': item.ticket.id.trim(),
         'producto_id': item.producto.codigoDeBarras.trim(),
         'cantidad': item.cantidad,
+        'unidad_medida': item.unidadMedida.trim().isEmpty ? 'unidad' : item.unidadMedida.trim(),
         'precio_unitario_aplicado': item.precioUnitarioAplicado,
         'cantidad_descuento': item.cantidadDescuento,
         'precio_descuento': item.precioDescuento,
@@ -47,7 +48,7 @@ class ItemTicketRepository {
     final db = await _executor(executor);
     final rows = await db.rawQuery(
       '''
-      SELECT it.id, it.ticket_id, it.producto_id, it.cantidad,
+      SELECT it.id, it.ticket_id, it.producto_id, it.cantidad, it.unidad_medida,
              it.precio_unitario_aplicado, it.cantidad_descuento, it.precio_descuento,
              p.nombre AS producto_nombre,
              r.id AS rubro_id, r.nombre AS rubro_nombre
@@ -87,6 +88,7 @@ class ItemTicketRepository {
         rubro: rubro,
       ),
       cantidad: ((row['cantidad'] as num?) ?? 0).toInt(),
+      unidadMedida: (row['unidad_medida'] as String?) ?? 'unidad',
       precioUnitarioAplicado: ((row['precio_unitario_aplicado'] as num?) ?? 0).toDouble(),
       cantidadDescuento: ((row['cantidad_descuento'] as num?) ?? 0).toInt(),
       precioDescuento: ((row['precio_descuento'] as num?) ?? 0).toDouble(),
@@ -102,7 +104,7 @@ class ItemTicketRepository {
 
     final rows = await db.rawQuery(
       '''
-      SELECT it.id, it.ticket_id, it.producto_id, it.cantidad,
+      SELECT it.id, it.ticket_id, it.producto_id, it.cantidad, it.unidad_medida,
              it.precio_unitario_aplicado, it.cantidad_descuento, it.precio_descuento,
              p.nombre AS producto_nombre,
              r.id AS rubro_id, r.nombre AS rubro_nombre
@@ -133,6 +135,7 @@ class ItemTicketRepository {
           rubro: rubro,
         ),
         cantidad: ((row['cantidad'] as num?) ?? 0).toInt(),
+        unidadMedida: (row['unidad_medida'] as String?) ?? 'unidad',
         precioUnitarioAplicado: ((row['precio_unitario_aplicado'] as num?) ?? 0).toDouble(),
         cantidadDescuento: ((row['cantidad_descuento'] as num?) ?? 0).toInt(),
         precioDescuento: ((row['precio_descuento'] as num?) ?? 0).toDouble(),
@@ -154,6 +157,7 @@ class ItemTicketRepository {
         'ticket_id': item.ticket.id.trim(),
         'producto_id': item.producto.codigoDeBarras.trim(),
         'cantidad': item.cantidad,
+        'unidad_medida': item.unidadMedida.trim().isEmpty ? 'unidad' : item.unidadMedida.trim(),
         'precio_unitario_aplicado': item.precioUnitarioAplicado,
         'cantidad_descuento': item.cantidadDescuento,
         'precio_descuento': item.precioDescuento,
@@ -176,7 +180,7 @@ class ItemTicketRepository {
     final db = await _executor(executor);
     final rows = await db.rawQuery(
       '''
-      SELECT it.id, it.ticket_id, it.producto_id, it.cantidad,
+      SELECT it.id, it.ticket_id, it.producto_id, it.cantidad, it.unidad_medida,
              it.precio_unitario_aplicado, it.cantidad_descuento, it.precio_descuento,
              p.nombre AS producto_nombre,
              r.id AS rubro_id, r.nombre AS rubro_nombre
@@ -207,6 +211,7 @@ class ItemTicketRepository {
       codigoDeBarras: (row['producto_id'] as String?) ?? '',
       rubro: (row['rubro_nombre'] as String?) ?? '',
       cantidad: ((row['cantidad'] as num?) ?? 0).toInt(),
+      unidadMedida: (row['unidad_medida'] as String?) ?? 'unidad',
       precioUnitarioParametro: ((row['precio_unitario_aplicado'] as num?) ?? 0).toDouble(),
       cantidadDescuento: ((row['cantidad_descuento'] as num?) ?? 0).toInt(),
       precioDescuentoParametro: ((row['precio_descuento'] as num?) ?? 0).toDouble(),

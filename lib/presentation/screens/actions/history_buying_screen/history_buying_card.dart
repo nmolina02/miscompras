@@ -1,6 +1,6 @@
-import 'package:mi_compra_mayorista/data/local/item_ticket_repository.dart';
-import 'package:mi_compra_mayorista/data/local/compra_repository.dart';
-import 'package:mi_compra_mayorista/domain/entities/item_ticket.dart';
+import 'package:miscompras/data/local/item_ticket_repository.dart';
+import 'package:miscompras/data/local/compra_repository.dart';
+import 'package:miscompras/domain/entities/item_ticket.dart';
 import 'package:flutter/material.dart';
 
 class HistorialCompraDetalleScreen extends StatefulWidget {
