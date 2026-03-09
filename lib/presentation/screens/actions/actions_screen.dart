@@ -3,6 +3,7 @@ import 'package:miscompras/presentation/screens/actions/confirmation_buying_scre
 import 'package:miscompras/presentation/screens/actions/delete_buying_screen/delete_buying_screen.dart';
 import 'package:miscompras/presentation/screens/actions/history_buying_screen/history_buying_screen.dart';
 import 'package:miscompras/presentation/screens/actions/product_edit/product_edit.dart';
+import 'package:miscompras/presentation/screens/actions/reporting_screen/reporting_screen.dart';
 import 'package:flutter/material.dart';
 
 // Pantalla de detalle para cada opción
@@ -25,8 +26,8 @@ class ActionsScreen extends StatelessWidget {
         return const HistorialComprasScreen();
       case 'Eliminar Compra':
         return const EliminarCompraScreen();
-      /*case 'Reportes / Estadísticas':
-        return const ReportesEstadisticasScreen();*/
+      case 'Reportes / Estadísticas':
+        return const ReportesEstadisticasScreen();
       case 'Editar Productos':
         return const DatabaseEditProductsScreen();
       default:
