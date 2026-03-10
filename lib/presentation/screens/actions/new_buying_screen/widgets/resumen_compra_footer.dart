@@ -33,7 +33,7 @@ class ResumenCompraFooter extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 16, top: 8, bottom: 8),
                 child: FilledButton.icon(
                   onPressed: lugarDefinido ? onAgregarProducto : null,
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.add_shopping_cart_rounded),
                   label: const Text('Producto'),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(0, 48),
@@ -95,7 +95,7 @@ class ResumenCompraFooter extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: puedeFinalizar ? onFinalizarCompra : null,
+                  onPressed: tieneProductos ? onFinalizarCompra : null,
                   icon: const Icon(Icons.check),
                   label: const Text('Finalizar Compra'),
                   style: FilledButton.styleFrom(

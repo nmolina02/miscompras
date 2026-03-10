@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
         );
 
         return MaterialApp(
-          title: 'MiCompraMayorista',
+          title: 'MisCompras',
           debugShowCheckedModeBanner: false,
           theme: appTheme.theme(brightness: Brightness.light),
           darkTheme: appTheme.theme(brightness: Brightness.dark),

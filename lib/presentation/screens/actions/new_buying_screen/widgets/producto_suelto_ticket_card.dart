@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class ProductoSueltoTicketCard extends StatelessWidget {
   final ItemTicketUsuario producto;
   final int index;
+  final bool mostrarHintGenerarCodigo;
   final bool estaExpandido;
   final List<ItemTicketUsuario> productosFiltrados;
   final List<ItemTicketUsuario> historialProductos;
@@ -31,6 +32,7 @@ class ProductoSueltoTicketCard extends StatelessWidget {
     super.key,
     required this.producto,
     required this.index,
+    this.mostrarHintGenerarCodigo = false,
     required this.estaExpandido,
     required this.productosFiltrados,
     required this.historialProductos,
@@ -202,13 +204,45 @@ class ProductoSueltoTicketCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.qr_code_2_rounded),
-                          tooltip: 'Escanear código de barras',
-                          onPressed: onScaleProduct,
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: mostrarHintGenerarCodigo
+                                ? Colors.amber.withValues(alpha: 0.22)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: mostrarHintGenerarCodigo
+                                  ? Colors.amber.shade700
+                                  : Colors.transparent,
+                              width: 1.2,
+                            ),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.qr_code_2_rounded),
+                            tooltip: 'Generar codigo de barras',
+                            onPressed: onScaleProduct,
+                          ),
                         ),
                       ],
                     ),
+                    if (mostrarHintGenerarCodigo)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.touch_app_rounded, size: 16, color: Colors.amber),
+                            SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Toca el icono QR para generar el codigo de barras y poder finalizar la compra.',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 12),
                     Row(
                       children: [

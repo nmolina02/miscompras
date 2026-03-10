@@ -132,12 +132,11 @@ class _ReportesEstadisticasScreenState extends State<ReportesEstadisticasScreen>
 
 		var itemsTotales = 0;
 		var unidadesTotales = 0;
-		var montoTotal = 0.0;
+		final montoTotal = compras.fold<double>(0, (sum, compra) => sum + compra.importeTotal);
 
 		for (final r in registros) {
 			itemsTotales += 1;
 			unidadesTotales += r.cantidad;
-			montoTotal += r.total;
 
 			if (!r.esProductoSuelto && _esUnidad(r.unidadMedida)) {
 				porProductoNoSuelto.putIfAbsent(r.producto, _Acumulador.new).agregar(r.cantidad, r.total);
@@ -156,12 +155,16 @@ class _ReportesEstadisticasScreenState extends State<ReportesEstadisticasScreen>
 			porRubroTickets.putIfAbsent(r.rubro, () => <String>{}).add(r.ticketId);
 			porRubroMonto.update(r.rubro, (value) => value + r.total, ifAbsent: () => r.total);
 
-			final inicioPeriodo = _inicioPeriodo(r.fecha, agrupacionTemporal);
-			porPeriodo.update(inicioPeriodo, (value) => value + r.total, ifAbsent: () => r.total);
 		}
 
 		for (final compra in compras) {
 			porComercio.putIfAbsent(compra.comercio, _Acumulador.new).agregar(1, compra.importeTotal);
+
+			final fechaCompra = DateTime.tryParse(compra.fecha);
+			if (fechaCompra != null) {
+				final inicioPeriodo = _inicioPeriodo(fechaCompra, agrupacionTemporal);
+				porPeriodo.update(inicioPeriodo, (value) => value + compra.importeTotal, ifAbsent: () => compra.importeTotal);
+			}
 		}
 
 		final topProductos = porProductoNoSuelto.entries
@@ -392,7 +395,7 @@ class _ReportesEstadisticasScreenState extends State<ReportesEstadisticasScreen>
 										),
 										const SizedBox(height: 16),
 										_SeccionCard(
-											titulo: 'Top productos no sueltos (en unidades)',
+											titulo: 'Top productos registrados (en unidades)',
 											child: _RankingTabla(
 												filas: _reporte.topProductos.take(10).toList(),
 												encabezadoCantidad: 'Unidades',
@@ -692,12 +695,17 @@ class _PieChartRubros extends StatelessWidget {
 			children: <Widget>[
 				Expanded(
 					flex: 4,
-					child: CustomPaint(
-						painter: _PiePainter(
-							valores: filas.map((f) => f.monto).toList(),
-							colores: colores,
+					child: Center(
+						child: AspectRatio(
+							aspectRatio: 1,
+							child: CustomPaint(
+								painter: _PiePainter(
+									valores: filas.map((f) => f.monto).toList(),
+									colores: colores,
+								),
+								child: const SizedBox.expand(),
+							),
 						),
-						child: const SizedBox.expand(),
 					),
 				),
 				const SizedBox(width: 8),
@@ -749,7 +757,10 @@ class _PiePainter extends CustomPainter {
 			return;
 		}
 
-		final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+		final diametro = math.min(size.width, size.height);
+		final left = (size.width - diametro) / 2;
+		final top = (size.height - diametro) / 2;
+		final rect = Rect.fromLTWH(left, top, diametro, diametro);
 		var anguloInicio = -math.pi / 2;
 
 		for (var i = 0; i < valores.length; i += 1) {
@@ -761,13 +772,6 @@ class _PiePainter extends CustomPainter {
 			canvas.drawArc(rect, anguloInicio, barrido, true, paint);
 			anguloInicio += barrido;
 		}
-
-		final centro = Offset(size.width / 2, size.height / 2);
-		canvas.drawCircle(
-			centro,
-			size.shortestSide * 0.24,
-			Paint()..color = Colors.white,
-		);
 	}
 
 	@override

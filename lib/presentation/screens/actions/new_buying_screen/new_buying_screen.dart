@@ -45,6 +45,8 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
   final Set<ItemTicketUsuario> _nombreProductoSueltoTocado = <ItemTicketUsuario>{};
   final Set<ItemTicketUsuario> _codigoProductoValidado = <ItemTicketUsuario>{};
   final Set<ItemTicketUsuario> _codigoProductoEscaneado = <ItemTicketUsuario>{};
+  bool _mostrarAyudaCodigoSuelto = false;
+  bool _mostrarAyudaTildeNoSuelto = false;
 
   @override
   void initState() {
@@ -193,6 +195,10 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
     producto.cantidadDescuentoController.text = '0';
     producto.precioDescuento = 0.0;
     producto.precioDescuentoController.text = '0';
+
+    if (!_tieneProductoSueltoSinCodigo()) {
+      _mostrarAyudaCodigoSuelto = false;
+    }
   }
 
   Future<bool> _confirmarEdicionNombreProductoSuelto(ItemTicketUsuario producto) async {
@@ -317,6 +323,9 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
 
       setState(() {
         producto.codigoBarrasController.text = codigoFinal;
+        if (!_tieneProductoSueltoSinCodigo()) {
+          _mostrarAyudaCodigoSuelto = false;
+        }
       });
       _guardarBorrador();
     } catch (_) {
@@ -468,6 +477,40 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
     return _productos.every((item) => item.codigoBarrasController.text.trim().isNotEmpty);
   }
 
+  bool _tieneProductoSueltoSinCodigo() {
+    return _productos.any(
+      (item) => item.esProductoSuelto && item.codigoBarrasController.text.trim().isEmpty,
+    );
+  }
+
+  int? _primerIndiceProductoSueltoSinCodigo() {
+    final index = _productos.indexWhere(
+      (item) => item.esProductoSuelto && item.codigoBarrasController.text.trim().isEmpty,
+    );
+    return index == -1 ? null : index;
+  }
+
+  bool _tieneProductoNoSueltoPendienteTilde() {
+    return _productos.any(
+      (item) =>
+          !item.esProductoSuelto &&
+          item.codigoBarrasController.text.trim().isNotEmpty &&
+          !_codigoProductoValidado.contains(item) &&
+          !_codigoProductoEscaneado.contains(item),
+    );
+  }
+
+  int? _primerIndiceProductoNoSueltoPendienteTilde() {
+    final index = _productos.indexWhere(
+      (item) =>
+          !item.esProductoSuelto &&
+          item.codigoBarrasController.text.trim().isNotEmpty &&
+          !_codigoProductoValidado.contains(item) &&
+          !_codigoProductoEscaneado.contains(item),
+    );
+    return index == -1 ? null : index;
+  }
+
   bool _tienenNombre() {
     return _productos.every((item) => item.nombreController.text.trim().isNotEmpty);
   }
@@ -506,7 +549,53 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
       return;
     }
 
+    if (!_tienenNombre()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debe completar el nombre de todos los productos.'),
+        ),
+      );
+      return;
+    }
+
+    if (!_tienenCodigoDeBarras()) {
+      if (_tieneProductoSueltoSinCodigo()) {
+        final index = _primerIndiceProductoSueltoSinCodigo();
+        setState(() {
+          _mostrarAyudaCodigoSuelto = true;
+          if (index != null) {
+            _productoExpandidoIndex = index;
+            _productosFiltrados = [];
+            _rubrosFiltrados = [];
+          }
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Para finalizar, genere el codigo de barras del producto suelto pendiente.'),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Debe completar el codigo de barras de todos los productos.'),
+          ),
+        );
+      }
+      return;
+    }
+
     if (!_codigosProductosNormalesValidados()) {
+      final index = _primerIndiceProductoNoSueltoPendienteTilde();
+      setState(() {
+        _mostrarAyudaTildeNoSuelto = true;
+        if (index != null) {
+          _productoExpandidoIndex = index;
+          _productosFiltrados = [];
+          _rubrosFiltrados = [];
+        }
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Debe validar con la tilde cada código de barras ingresado manualmente.'),
@@ -634,6 +723,8 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
       _productoExpandidoIndex = null;
       _productosFiltrados = [];
       _lugaresFiltrados = [];
+      _mostrarAyudaCodigoSuelto = false;
+      _mostrarAyudaTildeNoSuelto = false;
       _lugarController.clear();
       _lugarFocusNode.unfocus();
     });
@@ -703,6 +794,10 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
       } else if (nombre != null) {
         _codigoProductoValidado.add(producto);
       }
+
+      if (!_tieneProductoNoSueltoPendienteTilde()) {
+        _mostrarAyudaTildeNoSuelto = false;
+      }
     });
 
     if (!mounted) {
@@ -762,15 +857,64 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
     _guardarBorrador();
   }
 
+  Future<void> _mostrarAyudaIconos() async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Ayuda - Iconos de la compra'),
+          content: SizedBox(
+            width: 420,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  _AyudaIconoItem(icono: Icons.delete_outline_rounded, texto: 'Elimina el producto actual.'),
+                  _AyudaIconoItem(icono: Icons.check_rounded, texto: 'Valida el codigo de barras ingresado manualmente.'),
+                  _AyudaIconoItem(icono: Icons.qr_code_scanner_rounded, texto: 'Escanea el codigo de barras con la camara.'),
+                  _AyudaIconoItem(icono: Icons.qr_code_2_rounded, texto: 'Autogenera codigo para producto suelto.'),
+                  _AyudaIconoItem(icono: Icons.remove, texto: 'Resta una unidad de cantidad.'),
+                  _AyudaIconoItem(icono: Icons.add, texto: 'Suma una unidad de cantidad.'),
+                  _AyudaIconoItem(icono: Icons.expand_less, texto: 'Pliega el detalle del producto.'),
+                  _AyudaIconoItem(icono: Icons.expand_more, texto: 'Despliega el detalle del producto.'),
+                  _AyudaIconoItem(icono: Icons.location_on, texto: 'Indica el comercio o lugar de compra.'),
+                  _AyudaIconoItem(icono: Icons.check, texto: 'Finaliza y guarda la compra.'),
+                  _AyudaIconoItem(icono: Icons.delete_forever_outlined, texto: 'Cancela toda la compra actual.'),
+                  _AyudaIconoItem(icono: Icons.add_shopping_cart_rounded, texto: 'Agrega un producto registrado.'),
+                  _AyudaIconoItem(icono: Icons.shopping_basket_outlined, texto: 'Agrega un producto suelto.'),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     String lugarSeleccionado = _lugarController.text.trim();
     final tecladoVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    final primerSueltoSinCodigoIndex = _primerIndiceProductoSueltoSinCodigo();
+    final primerNoSueltoPendienteTilde = _primerIndiceProductoNoSueltoPendienteTilde();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nueva Compra'),
         elevation: 0,
+        actions: [
+          IconButton(
+            tooltip: 'Ayuda',
+            icon: const Icon(Icons.help_outline_rounded),
+            onPressed: _mostrarAyudaIconos,
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -832,6 +976,8 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
                         return ProductoSueltoTicketCard(
                           producto: producto,
                           index: index,
+                          mostrarHintGenerarCodigo:
+                              _mostrarAyudaCodigoSuelto && index == primerSueltoSinCodigoIndex,
                           estaExpandido: _productoExpandidoIndex == index,
                           productosFiltrados: _productosFiltrados,
                           historialProductos: _obtenerHistorialProductosPorTipo(esProductoSuelto: true),
@@ -929,6 +1075,8 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
                       return ProductoTicketCard(
                         producto: producto,
                         index: index,
+                        mostrarHintValidarCodigo:
+                            _mostrarAyudaTildeNoSuelto && index == primerNoSueltoPendienteTilde,
                         estaExpandido: _productoExpandidoIndex == index,
                         productosFiltrados: _productosFiltrados,
                         historialProductos: _obtenerHistorialProductosPorTipo(esProductoSuelto: false),
@@ -979,8 +1127,16 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
                           });
                         },
                         onSelectNombre: (productoSeleccionado) async {
-                          producto.nombreController.text = productoSeleccionado.nombreController.text;
-                          producto.codigoBarrasController.text = productoSeleccionado.codigoBarrasController.text;
+                          setState(() {
+                            producto.nombreController.text = productoSeleccionado.nombreController.text;
+                            producto.codigoBarrasController.text = productoSeleccionado.codigoBarrasController.text;
+                            // Si el producto viene del historial/recomendados, queda validado igual que un escaneo.
+                            _codigoProductoEscaneado.remove(producto);
+                            _codigoProductoValidado.add(producto);
+                            if (!_tieneProductoNoSueltoPendienteTilde()) {
+                              _mostrarAyudaTildeNoSuelto = false;
+                            }
+                          });
                           producto.nombreFocusNode.unfocus();
 
                           // si selecciono un producto del historial, cargo su última info conocida del mismo
@@ -1048,6 +1204,96 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
                     },
                   ),
           ),
+          if (!tecladoVisible && _mostrarAyudaCodigoSuelto && _tieneProductoSueltoSinCodigo())
+            Container(
+              margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.amber.shade700),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lightbulb_outline_rounded, color: Colors.amber.shade900),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Te falta generar el codigo de barras de un producto suelto para poder finalizar.',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      final index = _primerIndiceProductoSueltoSinCodigo();
+                      if (index == null) {
+                        return;
+                      }
+                      setState(() {
+                        _productoExpandidoIndex = index;
+                        _productosFiltrados = [];
+                        _rubrosFiltrados = [];
+                      });
+                    },
+                    child: const Text('Ver'),
+                  ),
+                  IconButton(
+                    tooltip: 'Ocultar ayuda',
+                    onPressed: () {
+                      setState(() {
+                        _mostrarAyudaCodigoSuelto = false;
+                      });
+                    },
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+          if (!tecladoVisible && _mostrarAyudaTildeNoSuelto && _tieneProductoNoSueltoPendienteTilde())
+            Container(
+              margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.lightBlue.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.lightBlue.shade600),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle_outline_rounded, color: Colors.lightBlue.shade900),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Falta validar un codigo manual: toca la tilde del producto pendiente para continuar.',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      final index = _primerIndiceProductoNoSueltoPendienteTilde();
+                      if (index == null) {
+                        return;
+                      }
+                      setState(() {
+                        _productoExpandidoIndex = index;
+                        _productosFiltrados = [];
+                        _rubrosFiltrados = [];
+                      });
+                    },
+                    child: const Text('Ver'),
+                  ),
+                  IconButton(
+                    tooltip: 'Ocultar ayuda',
+                    onPressed: () {
+                      setState(() {
+                        _mostrarAyudaTildeNoSuelto = false;
+                      });
+                    },
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 180),
             child: tecladoVisible
@@ -1063,6 +1309,28 @@ class _NuevaCompraScreenState extends State<NuevaCompraScreen> {
                     onCancelarCompra: _confirmarCancelarCompra,
                   ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AyudaIconoItem extends StatelessWidget {
+  final IconData icono;
+  final String texto;
+
+  const _AyudaIconoItem({required this.icono, required this.texto});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icono, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Text(texto)),
         ],
       ),
     );

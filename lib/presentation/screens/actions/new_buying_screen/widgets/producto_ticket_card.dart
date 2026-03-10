@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class ProductoTicketCard extends StatelessWidget {
   final ItemTicketUsuario producto;
   final int index;
+  final bool mostrarHintValidarCodigo;
   final bool estaExpandido;
   final List<ItemTicketUsuario> productosFiltrados;
   final List<ItemTicketUsuario> historialProductos;
@@ -33,6 +34,7 @@ class ProductoTicketCard extends StatelessWidget {
     super.key,
     required this.producto,
     required this.index,
+    this.mostrarHintValidarCodigo = false,
     required this.estaExpandido,
     required this.productosFiltrados,
     required this.historialProductos,
@@ -184,18 +186,50 @@ class ProductoTicketCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.check_rounded),
-                          tooltip: 'Confirmar código de barras',
-                          onPressed: onCheckCodigo,
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: mostrarHintValidarCodigo
+                                ? Colors.lightBlue.withValues(alpha: 0.18)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: mostrarHintValidarCodigo
+                                  ? Colors.lightBlue.shade700
+                                  : Colors.transparent,
+                              width: 1.2,
+                            ),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.check_rounded),
+                            tooltip: 'Confirmar código de barras',
+                            onPressed: onCheckCodigo,
+                          ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.qr_code_2_rounded),
+                          icon: const Icon(Icons.qr_code_scanner_rounded),
                           tooltip: 'Escanear código de barras',
                           onPressed: onScan,
                         ),
                       ],
                     ),
+                    if (mostrarHintValidarCodigo)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.touch_app_rounded, size: 16, color: Colors.lightBlue),
+                            SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Toca la tilde para validar este codigo manual y poder finalizar la compra.',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 12),
                     Row(
                       children: [

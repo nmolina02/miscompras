@@ -266,8 +266,8 @@ class AppDatabase {
   Future<Directory> _resolveBackupDirectory() async {
     if (Platform.isAndroid) {
       final candidates = <String>[
-        '/storage/emulated/0/Download/MiCompraMayorista',
-        '/sdcard/Download/MiCompraMayorista',
+        '/storage/emulated/0/Download/MisCompras',
+        '/sdcard/Download/MisCompras',
       ];
 
       for (final candidatePath in candidates) {

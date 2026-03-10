@@ -69,16 +69,25 @@ class _HistorialCompraDetalleScreenState extends State<HistorialCompraDetalleScr
 	}
 
 	double _calcularTotalItem(ItemTicket item) {
+		if (_esProductoSuelto(item.producto.codigoDeBarras)) {
+			return item.precioUnitarioAplicado;
+		}
+
 		final usaDescuento = item.cantidad >= item.cantidadDescuento && item.precioDescuento > 0;
 		final precio = usaDescuento ? item.precioDescuento : item.precioUnitarioAplicado;
 		return item.cantidad * precio;
+	}
+
+	bool _esProductoSuelto(String codigo) {
+		final codigoLimpio = codigo.trim();
+		return codigoLimpio.length >= 21 && RegExp(r'^\d+$').hasMatch(codigoLimpio);
 	}
 
 	@override
 	Widget build(BuildContext context) {		
     return Scaffold(
 			appBar: AppBar(
-				title: Text('Detalle Ticket #${widget.compra.ticketId}'),
+				title: Text('Detalle Ticket'),
 			),
 			body: _cargando
 					? const Center(child: CircularProgressIndicator())
@@ -140,13 +149,15 @@ class _HistorialCompraDetalleScreenState extends State<HistorialCompraDetalleScr
 																			children: [
 																				Expanded(
 																					child: Text(
-																						'${item.cantidad} x \$${item.precioUnitarioAplicado.toStringAsFixed(2)}',
+																						_esProductoSuelto(item.producto.codigoDeBarras)
+																							? '${item.cantidad} ${item.unidadMedida}'
+																							: '${item.cantidad} x \$${item.precioUnitarioAplicado.toStringAsFixed(2)}',
 																					),
 																				),
 																				Text('\$${_calcularTotalItem(item).toStringAsFixed(2)}'),
 																			],
 																		),
-																		if (item.cantidadDescuento > 0 && item.precioDescuento > 0)
+																			if (!_esProductoSuelto(item.producto.codigoDeBarras) && item.cantidadDescuento > 0 && item.precioDescuento > 0)
 																			Padding(
 																				padding: const EdgeInsets.only(top: 2),
 																				child: Text(

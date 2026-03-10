@@ -49,7 +49,7 @@ class _HomeViewState extends State<_HomeView> {
                     ),
                     const SizedBox(width: 8),
                     const Text(
-                      'MiCompraMayorista',
+                      'MisCompras',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
